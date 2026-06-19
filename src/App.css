@@ -1,0 +1,30 @@
+/* Neo-Brutalist Theme Overrides */
+
+/* Smooth transitions for neo-brutalist effects */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Focus states */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 2px;
+}
+
+/* Remove default input styling */
+input,
+textarea {
+  border: none;
+  background: inherit;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+}
