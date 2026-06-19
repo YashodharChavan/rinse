@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import { MachineManager } from '../components/MachineManager'
 
 export function OwnerDashboard() {
   const { user, signOut } = useAuth()
@@ -145,17 +146,10 @@ export function OwnerDashboard() {
               </div>
             </div>
           </div>
-
-          {/* Machines Card (Placeholder for now) */}
-          <div className="border-4 border-black p-6 bg-yellow-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <h2 className="text-2xl font-black mb-4 tracking-tight">MACHINES</h2>
-            <div className="space-y-3 font-bold">
-              <p>🔧 Total Machines: 0</p>
-              <p>✓ Active: 0</p>
-              <p>⚠️ Out of Order: 0</p>
-            </div>
-          </div>
         </div>
+
+        {/* Machine Manager Component */}
+        {pgDetails && <MachineManager pgId={pgDetails.id} />}
 
         {/* Join Requests Card */}
         <div className="border-4 border-black p-6 bg-pink-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
@@ -203,10 +197,7 @@ export function OwnerDashboard() {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="border-4 border-black p-4 bg-cyan-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
-            ➕ ADD MACHINE
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button className="border-4 border-black p-4 bg-cyan-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all">
             👁️ MANAGE RESIDENTS
           </button>

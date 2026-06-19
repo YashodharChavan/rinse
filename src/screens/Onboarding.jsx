@@ -56,7 +56,7 @@ export function Onboarding() {
         .from('profiles')
         .upsert({
           id: user.id,
-          full_name: 'Resident', // Placeholder
+          full_name: user?.user_metadata?.full_name || user?.user_metadata?.name ||'Resident', // Placeholder
           role: 'resident',
           pg_id: pgId,
           is_approved: false,
