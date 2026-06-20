@@ -7,7 +7,6 @@ import { Onboarding } from './screens/Onboarding'
 import { ResidentDashboard } from './screens/ResidentDashboard'
 import { OwnerDashboard } from './screens/OwnerDashboard'
 import { WaitingApproval } from './screens/WaitingApproval'
-
 function AppContent() {
   const { user, loading } = useAuth()
   const [profileData, setProfileData] = useState(null)
@@ -79,6 +78,10 @@ function AppContent() {
     } else {
       return <WaitingApproval />
     }
+  }
+
+  if (!profileData?.role) {
+    return <Onboarding /> // Or whatever your "Enter PG Code" component is named
   }
 
   // Fallback

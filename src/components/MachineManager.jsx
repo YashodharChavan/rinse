@@ -5,7 +5,7 @@ export function MachineManager({ pgId }) {
   const [machines, setMachines] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
+
   // Form state
   const [machineNumber, setMachineNumber] = useState('')
   const [cycleDuration, setCycleDuration] = useState('')
@@ -23,7 +23,7 @@ export function MachineManager({ pgId }) {
     try {
       setLoading(true)
       setError(null)
-      
+
       const { data, error: fetchError } = await supabase
         .from('machines')
         .select('*')
@@ -31,7 +31,7 @@ export function MachineManager({ pgId }) {
         .order('machine_number', { ascending: true })
 
       if (fetchError) throw fetchError
-      
+
       setMachines(data || [])
     } catch (err) {
       console.error('Error fetching machines:', err)
@@ -43,7 +43,7 @@ export function MachineManager({ pgId }) {
 
   const handleAddMachine = async (e) => {
     e.preventDefault()
-    
+
     if (!machineNumber.trim() || !cycleDuration.trim() || !detergentType.trim()) {
       alert('Please fill in all fields.')
       return
@@ -51,7 +51,7 @@ export function MachineManager({ pgId }) {
 
     try {
       setSubmitting(true)
-      
+
       const { data, error: insertError } = await supabase
         .from('machines')
         .insert([
@@ -66,10 +66,10 @@ export function MachineManager({ pgId }) {
         .select()
 
       if (insertError) throw insertError
-      
+
       // Add new machine to state
       setMachines((prev) => [...prev, data[0]].sort((a, b) => parseInt(a.machine_number) - parseInt(b.machine_number)))
-      
+
       // Reset form
       setMachineNumber('')
       setCycleDuration('')
@@ -92,7 +92,7 @@ export function MachineManager({ pgId }) {
         .eq('id', machineId)
 
       if (deleteError) throw deleteError
-      
+
       setMachines((prev) => prev.filter((m) => m.id !== machineId))
     } catch (err) {
       console.error('Error deleting machine:', err)
@@ -112,7 +112,7 @@ export function MachineManager({ pgId }) {
         .eq('id', machineId)
 
       if (updateError) throw updateError
-      
+
       setMachines((prev) =>
         prev.map((m) => (m.id === machineId ? { ...m, status: nextStatus } : m))
       )
@@ -153,52 +153,58 @@ export function MachineManager({ pgId }) {
   }
 
   return (
-    <div className="border-4 border-black p-8 bg-cyan-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8">
+    <div className="border-4 border-black p-4 sm:p-6 bg-cyan-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-8">
+
       {/* Add Machine Form Section */}
-      <div className="mb-12">
-        <h2 className="text-3xl font-black mb-6 tracking-tight">ADD NEW MACHINE</h2>
-        
-        <form onSubmit={handleAddMachine} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-black mb-2">Machine Number</label>
+      <div className="mb-8 border-b-4 border-black pb-8">
+        <h2 className="text-xl sm:text-2xl font-black mb-4 tracking-tight">ADD NEW MACHINE</h2>
+
+        <form onSubmit={handleAddMachine} className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+
+            {/* Machine Number - Full width on mobile, 1/3 on desktop */}
+            <div className="w-full sm:w-1/3">
+              <label className="block font-black mb-1 text-[10px] sm:text-xs tracking-tight uppercase">Machine No.</label>
               <input
                 type="text"
                 value={machineNumber}
                 onChange={(e) => setMachineNumber(e.target.value)}
                 placeholder="e.g., M-001"
-                className="w-full border-4 border-black p-3 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full border-4 border-black p-2 font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
-            
-            <div>
-              <label className="block font-black mb-2">Cycle Duration (mins)</label>
-              <input
-                type="number"
-                value={cycleDuration}
-                onChange={(e) => setCycleDuration(e.target.value)}
-                placeholder="45"
-                min="1"
-                className="w-full border-4 border-black p-3 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
-            
-            <div>
-              <label className="block font-black mb-2">Detergent Type</label>
-              <input
-                type="text"
-                value={detergentType}
-                onChange={(e) => setDetergentType(e.target.value)}
-                placeholder="e.g., Liquid / Powder"
-                className="w-full border-4 border-black p-3 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black"
-              />
+
+            {/* Side-by-Side Grid for mobile (Cycle & Detergent) */}
+            <div className="w-full sm:w-2/3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-black mb-1 text-[10px] sm:text-xs tracking-tight uppercase">Cycle (mins)</label>
+                <input
+                  type="number"
+                  value={cycleDuration}
+                  onChange={(e) => setCycleDuration(e.target.value)}
+                  placeholder="45"
+                  min="1"
+                  className="w-full border-4 border-black p-2 font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black mb-1 text-[10px] sm:text-xs tracking-tight uppercase">Detergent</label>
+                <input
+                  type="text"
+                  value={detergentType}
+                  onChange={(e) => setDetergentType(e.target.value)}
+                  placeholder="Liquid/Powder"
+                  className="w-full border-4 border-black p-2 font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
             </div>
           </div>
-          
+
           <button
             type="submit"
             disabled={submitting}
-            className="w-full border-4 border-black p-4 bg-lime-300 font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-lime-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full border-4 border-black p-3 mt-1 bg-lime-300 font-black text-sm sm:text-base shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-lime-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? '⏳ ADDING...' : '➕ ADD MACHINE'}
           </button>
@@ -207,46 +213,46 @@ export function MachineManager({ pgId }) {
 
       {/* Machine Roster Section */}
       <div>
-        <h2 className="text-3xl font-black mb-6 tracking-tight">MACHINE ROSTER</h2>
-        
+        <h2 className="text-xl sm:text-2xl font-black mb-4 tracking-tight">MACHINE ROSTER</h2>
+
         {loading ? (
-          <div className="text-center p-8 border-4 border-black bg-white">
-            <p className="text-xl font-bold">⏳ Loading machines...</p>
+          <div className="text-center p-6 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm sm:text-base font-bold">⏳ Loading machines...</p>
           </div>
         ) : error ? (
-          <div className="text-center p-8 border-4 border-black bg-red-100">
-            <p className="text-xl font-bold text-red-700">{error}</p>
+          <div className="text-center p-6 border-4 border-black bg-red-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm sm:text-base font-bold text-red-700">{error}</p>
           </div>
         ) : machines.length === 0 ? (
-          <div className="text-center p-8 border-4 border-black bg-white">
-            <p className="text-xl font-bold">No machines yet. Add one above!</p>
+          <div className="text-center p-6 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm sm:text-base font-bold">No machines yet. Add one above!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {machines.map((machine) => (
               <div
                 key={machine.id}
-                className={`border-4 border-black p-6 ${getStatusColor(machine.status)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col`}
+                className={`border-4 border-black p-4 sm:p-5 ${getStatusColor(machine.status)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col`}
               >
                 <div className="mb-4 flex-1">
-                  <h3 className="text-2xl font-black mb-3 tracking-tight">{machine.machine_number}</h3>
-                  <div className="space-y-2 font-bold text-sm">
+                  <h3 className="text-xl sm:text-2xl font-black mb-2 tracking-tight">{machine.machine_number}</h3>
+                  <div className="space-y-1 font-bold text-xs sm:text-sm">
                     <p>⏱️ Cycle: {machine.cycle_duration} mins</p>
                     <p>🧼 Detergent: {machine.detergent_type}</p>
-                    <p className="pt-2 text-lg font-black">{getStatusLabel(machine.status)}</p>
+                    <p className="pt-2 text-base font-black">{getStatusLabel(machine.status)}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleStatus(machine.id, machine.status)}
-                    className="flex-1 border-4 border-black p-2 bg-blue-300 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+                    className="flex-1 border-4 border-black p-2 bg-blue-300 font-black text-[10px] sm:text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
                   >
-                    CHANGE STATUS
+                    STATUS
                   </button>
                   <button
                     onClick={() => handleDeleteMachine(machine.id)}
-                    className="flex-1 border-4 border-black p-2 bg-red-300 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-red-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+                    className="flex-1 border-4 border-black p-2 bg-red-300 font-black text-[10px] sm:text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-red-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
                   >
                     DELETE
                   </button>

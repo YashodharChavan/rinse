@@ -10,10 +10,10 @@ export function ScheduleView({ user, pgId }) {
     const [currentTime, setCurrentTime] = useState(new Date())
     const [inserting, setInserting] = useState(false)
     const [error, setError] = useState(null)
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
-    // NEW STATE: Tracks which booking we are trying to delete for the modal
+    // Modals state
     const [bookingToDelete, setBookingToDelete] = useState(null)
+    const [selectedBooking, setSelectedBooking] = useState(null) // NEW: Controls the info popup
 
     const scrollContainerRef = useRef(null)
 
@@ -75,9 +75,10 @@ export function ScheduleView({ user, pgId }) {
         try {
             if (!selectedMachine) return
 
+            // FIXED: Using profiles(*) fetches all available profile data (including email/wash_score) safely without crashing!
             const { data, error: fetchError } = await supabase
                 .from('schedule')
-                .select('*, profiles(full_name)')
+                .select('*, profiles(*)')
                 .eq('machine_id', selectedMachine.id)
 
             if (fetchError) throw fetchError
@@ -141,9 +142,18 @@ export function ScheduleView({ user, pgId }) {
         return slot.startMinute <= currentMinute
     }
 
+    // UPDATED: Now handles opening the popup if the slot is already booked!
     const handleSlotClick = async (slot) => {
         const booking = getBookingForSlot(slot)
-        if (booking || isSlotPast(slot) || inserting) return
+
+        // If it's already booked, open the detailed info modal instead of returning
+        if (booking) {
+            setSelectedBooking({ booking, slot })
+            return
+        }
+
+        // If it's an available slot but in the past, or we are currently inserting, ignore click
+        if (isSlotPast(slot) || inserting) return
 
         try {
             setInserting(true)
@@ -178,13 +188,11 @@ export function ScheduleView({ user, pgId }) {
         }
     }
 
-    // UPDATED CANCEL FUNCTION: Triggers the modal instead of window.confirm
     const requestCancelBooking = (e, bookingId) => {
-        e.stopPropagation() // Stop the slot from trying to click
-        setBookingToDelete(bookingId) // Opens the modal
+        e.stopPropagation()
+        setBookingToDelete(bookingId)
     }
 
-    // NEW FUNCTION: Actually deletes the booking when "YES" is clicked
     const confirmCancelBooking = async () => {
         if (!bookingToDelete) return
 
@@ -197,7 +205,7 @@ export function ScheduleView({ user, pgId }) {
 
             if (deleteError) throw deleteError
             await fetchBookings()
-            setBookingToDelete(null) // Close the modal on success
+            setBookingToDelete(null)
         } catch (err) {
             console.error('Error canceling booking:', err)
             alert('Failed to cancel wash.')
@@ -255,13 +263,62 @@ export function ScheduleView({ user, pgId }) {
     if (machines.length === 0) {
         return (
             <div className="border-4 border-black p-8 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <p className="text-xl font-black">No machines available. Ask your PG owner to add machines.</p>
+                <p className="text-xl font-black">No machines available. Add machines in the dashboard.</p>
             </div>
         )
     }
 
     return (
-        <div className="space-y-6 relative">
+        <div className="space-y-6 relative p-2 sm:p-2">
+
+            {/* NEW: BOOKING DETAILS MODAL */}
+            {selectedBooking && (
+                <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
+                    <div className="border-4 border-black p-6 sm:p-8 bg-cyan-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full relative">
+                        <button
+                            onClick={() => setSelectedBooking(null)}
+                            className="absolute -top-4 -right-4 border-4 border-black w-10 h-10 bg-white font-black text-xl hover:bg-red-400 active:translate-y-1 active:translate-x-1 transition-all flex items-center justify-center z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="text-center mb-6 flex flex-col items-center">
+                            <img
+                                src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${selectedBooking.booking.profiles?.full_name || 'Resident'}`}
+                                alt="User Avatar"
+                                className="w-18 h-18 sm:w-24 sm:h-24 border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 mt-8 sm:mt-4 object-contain"
+                            />
+                            <h3 className="text-2xl font-black uppercase tracking-tight truncate border-b-4 border-black pb-2">
+                                {selectedBooking.booking.profiles?.full_name || 'Resident'}
+                            </h3>
+                        </div>
+
+                        <div className="space-y-4 mb-6 border-4 border-black p-4 bg-white">
+                            <div>
+                                <p className="font-black text-[10px] text-gray-500 uppercase">Wash Block</p>
+                                <p className="font-bold text-lg">
+                                    {formatMinutes(selectedBooking.slot.startMinute)} - {formatMinutes(selectedBooking.slot.endMinute)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="font-black text-[10px] text-gray-500 uppercase">Phone</p>
+                                <p className="font-bold text-lg">{selectedBooking.booking.profiles?.phone || 'N/A'}</p>
+                            </div>
+                            <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
+                                <p className="font-black text-[10px] uppercase">Wash Score</p>
+                                <p className="font-black text-xl">{selectedBooking.booking.profiles?.wash_score ?? 100}</p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setSelectedBooking(null)}
+                            className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
+                        >
+                            CLOSE DETAILS
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* RETRO CONFIRMATION MODAL */}
             {bookingToDelete && (
@@ -292,48 +349,27 @@ export function ScheduleView({ user, pgId }) {
                 </div>
             )}
 
-            {/* Header - Compact Version */}
-            {/* Header - Compact Version with Retro Custom Dropdown */}
-            <div className="border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative z-50">
+            {/* Header */}
+            <div className="sticky top-0 z-50 border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex justify-between items-center gap-2 mb-3">
                     <h2 className="text-xl sm:text-2xl font-black tracking-tight m-0 leading-none">
                         SCHEDULE
                     </h2>
 
-                    {/* CUSTOM RETRO DROPDOWN */}
-                    <div className="relative">
-                        {/* The visible button */}
-                        <button
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className="border-4 border-black p-1 sm:p-2 font-bold bg-white focus:outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm min-w-[140px] flex justify-between items-center gap-2 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all"
-                        >
-                            <span>
-                                {selectedMachine
-                                    ? `${selectedMachine.machine_number} (${selectedMachine.cycle_duration}m)`
-                                    : 'SELECT MACHINE'}
-                            </span>
-                            <span className="text-[10px] font-black">▼</span>
-                        </button>
-
-                        {/* The dropdown menu */}
-                        {isDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-max min-w-full border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col z-[100]">
-                                {machines.map((machine) => (
-                                    <button
-                                        key={machine.id}
-                                        onClick={() => {
-                                            setSelectedMachine(machine)
-                                            setIsDropdownOpen(false)
-                                        }}
-                                        className={`text-left p-3 font-bold text-xs sm:text-sm border-b-4 border-black last:border-b-0 hover:bg-yellow-200 transition-colors ${selectedMachine?.id === machine.id ? 'bg-cyan-200' : 'bg-white'
-                                            }`}
-                                    >
-                                        {machine.machine_number} ({machine.cycle_duration}m)
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <select
+                        value={selectedMachine?.id || ''}
+                        onChange={(e) => {
+                            const machine = machines.find((m) => m.id === e.target.value)
+                            setSelectedMachine(machine)
+                        }}
+                        className="border-4 border-black p-1 sm:p-2 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm max-w-[150px] sm:max-w-none"
+                    >
+                        {machines.map((machine) => (
+                            <option key={machine.id} value={machine.id}>
+                                {machine.machine_number} ({machine.cycle_duration}m)
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
@@ -361,7 +397,7 @@ export function ScheduleView({ user, pgId }) {
                 </div>
             )}
 
-            {/* 1440px Calendar Grid */}
+            {/* Calendar Grid */}
             <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex overflow-hidden relative">
 
                 <div className="w-14 sm:w-16 bg-gray-100 shrink-0">
@@ -399,35 +435,33 @@ export function ScheduleView({ user, pgId }) {
                             </div>
                         )}
 
-                        {/* Booking slots */}
                         {slots.map((slot) => {
                             const booking = getBookingForSlot(slot)
                             const isBooked = !!booking
                             const isPast = isSlotPast(slot)
-                            const isAvailable = !isBooked && !isPast
+
+                            const isOwnerBooking = isBooked && booking.profiles?.role === 'owner'
 
                             let bgColor = 'bg-white'
                             let borderStyle = 'border-4 border-dashed border-black'
-                            let textColor = 'text-black'
                             let cursor = 'cursor-pointer'
                             let hoverClass = 'hover:bg-cyan-100 hover:border-solid hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all'
 
                             if (isPast && !isBooked) {
                                 bgColor = 'bg-gray-200'
                                 borderStyle = 'border-2 border-black opacity-60'
-                                textColor = 'text-gray-600'
                                 cursor = 'cursor-not-allowed'
                                 hoverClass = ''
                             } else if (isBooked) {
                                 const status = booking.status || 'scheduled'
-                                if (status === 'scheduled') bgColor = 'bg-blue-300'
+
+                                if (status === 'scheduled') bgColor = isOwnerBooking ? 'bg-purple-300' : 'bg-blue-300'
                                 if (status === 'active') bgColor = 'bg-yellow-300'
                                 if (status === 'completed') bgColor = 'bg-green-300'
 
                                 borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                textColor = 'text-black'
-                                cursor = 'cursor-not-allowed'
-                                hoverClass = ''
+                                cursor = 'cursor-pointer' // Keep it pointer so users know they can click it for info!
+                                hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
                             }
 
                             return (
@@ -454,12 +488,13 @@ export function ScheduleView({ user, pgId }) {
                                                     {booking.status}
                                                 </span>
                                                 <span className="truncate max-w-[60px] sm:max-w-[100px]">
+                                                    {isOwnerBooking && '👑 '}
                                                     {booking.profiles?.full_name?.split(' ')[0] || 'Resident'}
                                                 </span>
                                             </div>
                                         )}
 
-                                        {/* UPDATED: Delete Button calls requestCancelBooking */}
+                                        {/* STRICT CHECK: ONLY THE PERSON WHO BOOKED IT CAN DELETE IT */}
                                         {isBooked && booking.resident_id === user.id && booking.status === 'scheduled' && (
                                             <button
                                                 onClick={(e) => requestCancelBooking(e, booking.id)}
@@ -478,18 +513,21 @@ export function ScheduleView({ user, pgId }) {
             </div>
 
             {/* Legend */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
                 <div className="border-4 border-dashed border-black py-2 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[10px] sm:text-xs text-center">AVAILABLE</p>
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">AVAILABLE</p>
                 </div>
                 <div className="border-4 border-black py-2 bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[10px] sm:text-xs text-center">SCHEDULED</p>
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">SCHEDULED</p>
+                </div>
+                <div className="border-4 border-black py-2 bg-purple-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">OWNER</p>
                 </div>
                 <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[10px] sm:text-xs text-center">COMPLETED</p>
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
                 </div>
                 <div className="border-4 border-black py-2 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-60">
-                    <p className="font-black text-[10px] sm:text-xs text-center">PAST</p>
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">PAST</p>
                 </div>
             </div>
         </div>
