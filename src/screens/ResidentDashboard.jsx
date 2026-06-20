@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { ScheduleView } from '../components/ScheduleView'
+import { ProfileView } from '../components/ProfileView'
+
 export function ResidentDashboard() {
-  const { user, signOut } = useAuth()
+const { user, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState('home')
   const [userProfile, setUserProfile] = useState(null)
-  
+
   // New States for Home Tab
   const [upcomingBookings, setUpcomingBookings] = useState([])
   const [loadingBookings, setLoadingBookings] = useState(true)
@@ -25,7 +27,7 @@ export function ResidentDashboard() {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('full_name, role, pg_id, is_approved')
+          .select('full_name, phone, role, pg_id, is_approved')
           .eq('id', user.id)
           .single()
         if (data) setUserProfile(data)
@@ -48,7 +50,7 @@ export function ResidentDashboard() {
         .from('schedule')
         .select('*, machines(machine_number)')
         .eq('resident_id', user.id)
-        .gte('end_time', now) 
+        .gte('end_time', now)
         .order('start_time', { ascending: true }) // Sorted chronologically!
 
       if (error) throw error
@@ -106,7 +108,7 @@ export function ResidentDashboard() {
 
   // View Renderers
   const renderHomeTab = () => {
-    
+
     // NEW LOGIC: Filter down to ONLY the next upcoming wash per machine
     const seenMachines = new Set()
     const nextBookingsPerMachine = upcomingBookings.filter((booking) => {
@@ -130,7 +132,7 @@ export function ResidentDashboard() {
 
           {/* Action Center - Pluralized for multiple bookings */}
           <h2 className="text-2xl font-black mb-4 tracking-tight">YOUR UPCOMING WASHES</h2>
-          
+
           {loadingBookings ? (
             <div className="border-4 border-black p-8 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <p className="font-black text-center">Checking machines...</p>
@@ -139,7 +141,7 @@ export function ResidentDashboard() {
             <div className="border-4 border-black p-8 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center text-center">
               <p className="text-xl font-black mb-2">No upcoming washes</p>
               <p className="font-bold text-gray-600 mb-6">Your basket is looking full. Time to book a machine?</p>
-              <button 
+              <button
                 onClick={() => setActiveTab('schedule')}
                 className="border-4 border-black px-6 py-3 bg-cyan-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
               >
@@ -150,16 +152,15 @@ export function ResidentDashboard() {
             /* MAP OVER THE FILTERED LIST */
             <div className="space-y-6 mb-8">
               {nextBookingsPerMachine.map((booking) => {
-                
+
                 // Calculate time logic for EACH individual booking
                 const startTime = new Date(booking.start_time)
                 const fiveMinsBefore = new Date(startTime.getTime() - 5 * 60000)
                 const isTimeToStart = currentTime >= fiveMinsBefore
 
                 return (
-                  <div key={booking.id} className={`border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-colors ${
-                    booking.status === 'active' ? 'bg-yellow-300' : 'bg-blue-200'
-                  }`}>
+                  <div key={booking.id} className={`border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-colors ${booking.status === 'active' ? 'bg-yellow-300' : 'bg-blue-200'
+                    }`}>
                     <div className="flex justify-between items-start border-b-4 border-black pb-4 mb-4">
                       <div>
                         <p className="font-black text-sm tracking-widest mb-1">
@@ -174,8 +175,8 @@ export function ResidentDashboard() {
                           {booking.status}
                         </span>
                         <p className="font-bold text-xs mt-2">
-                          {new Date(booking.start_time).toDateString() === new Date().toDateString() 
-                            ? 'TODAY' 
+                          {new Date(booking.start_time).toDateString() === new Date().toDateString()
+                            ? 'TODAY'
                             : new Date(booking.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()
                           }
                         </p>
@@ -186,20 +187,19 @@ export function ResidentDashboard() {
                     <div className="flex flex-col sm:flex-row gap-3">
                       {booking.status === 'scheduled' && (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleCancelBooking(booking.id)}
                             className="flex-1 border-4 border-black p-3 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
                           >
                             CANCEL
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleUpdateStatus(booking.id, 'active')}
                             disabled={!isTimeToStart}
-                            className={`flex-[2] border-4 border-black p-3 font-black transition-all ${
-                              isTimeToStart 
-                                ? 'bg-green-300 hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' 
+                            className={`flex-[2] border-4 border-black p-3 font-black transition-all ${isTimeToStart
+                                ? 'bg-green-300 hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
-                            }`}
+                              }`}
                           >
                             {isTimeToStart ? 'START WASH ▶' : 'TOO EARLY TO START'}
                           </button>
@@ -207,7 +207,7 @@ export function ResidentDashboard() {
                       )}
 
                       {booking.status === 'active' && (
-                        <button 
+                        <button
                           onClick={() => handleUpdateStatus(booking.id, 'completed')}
                           className="w-full border-4 border-black p-4 bg-green-300 font-black text-lg hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                         >
@@ -253,26 +253,17 @@ export function ResidentDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f4f0ea] pb-32">
-      
+
       {activeTab === 'home' && renderHomeTab()}
       {activeTab === 'schedule' && <ScheduleView user={user} pgId={userProfile.pg_id} />}
-      
+
       {activeTab === 'profile' && (
-        <div className="p-6">
-          <div className="max-w-lg mx-auto">
-            <div className="border-4 border-black p-8 bg-cyan-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-8 text-center">
-              <div className="text-6xl mb-4">👤</div>
-              <h2 className="text-2xl font-black tracking-tight mb-2">{userProfile?.full_name}</h2>
-              <p className="font-bold mb-4 text-sm">{user?.email}</p>
-            </div>
-            <button
-              onClick={signOut}
-              className="w-full border-4 border-black p-6 bg-red-400 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black text-xl hover:bg-red-500 active:translate-x-1 active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-            >
-              SIGN OUT
-            </button>
-          </div>
-        </div>
+        <ProfileView
+          user={user}
+          userProfile={userProfile}
+          signOut={signOut}
+          onProfileUpdate={setUserProfile}
+        />
       )}
 
       {/* Fixed Bottom Navigation */}
@@ -280,31 +271,28 @@ export function ResidentDashboard() {
         <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 grid grid-cols-3 gap-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${
-              activeTab === 'home'
+            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'home'
                 ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
             📊 HOME
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${
-              activeTab === 'schedule'
+            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'schedule'
                 ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
             📅 SCHEDULE
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${
-              activeTab === 'profile'
+            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'profile'
                 ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
             👤 PROFILE
           </button>
