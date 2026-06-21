@@ -26,14 +26,13 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 <br />
 
-<div align="center">
 <img src="screenshots/resident home.png" width="32%" alt="Resident Home Dashboard">
-   &nbsp;
-   <img src="screenshots/schedule.png" width="32%" alt="Booking Schedule">
-   &nbsp;
-   <img src="screenshots/rank.png" width="32%" alt="Olympic Leaderboard">
-</div>
+&nbsp;
+<img src="screenshots/schedule.png" width="32%" alt="Booking Schedule">
+&nbsp;
+<img src="screenshots/rank.png" width="32%" alt="Olympic Leaderboard">
 
+</div>
 
 ## 🛑 The Problem
 
