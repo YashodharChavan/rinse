@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { PullToRefresh } from './PullToRefresh'
+import { createPortal } from 'react-dom'
 
 export function ScheduleView({ user, pgId }) {
     const [selectedDate, setSelectedDate] = useState(() => new Date())
@@ -139,7 +140,7 @@ export function ScheduleView({ user, pgId }) {
         if (checkDate > today) return false
 
         const currentMinute = (now.getHours() * 60) + now.getMinutes()
-        return slot.startMinute <= currentMinute
+        return (slot.startMinute + 5) <= currentMinute
     }
 
     const handleSlotClick = async (slot) => {
@@ -271,7 +272,7 @@ export function ScheduleView({ user, pgId }) {
             <div className="space-y-6 relative p-2 sm:p-2">
 
                 {/* BOOKING DETAILS MODAL */}
-                {selectedBooking && (
+                {selectedBooking && createPortal(
                     <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
                         <div className="border-4 border-black p-6 sm:p-8 bg-cyan-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full relative">
                             <button
@@ -328,11 +329,12 @@ export function ScheduleView({ user, pgId }) {
                                 CLOSE DETAILS
                             </button>
                         </div>
-                    </div>
+                    </div>, 
+                    document.body
                 )}
 
                 {/* RETRO CONFIRMATION MODAL */}
-                {bookingToDelete && (
+                {bookingToDelete && createPortal(
                     <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
                         <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
                             <div className="text-5xl mb-4">⚠️</div>
@@ -357,7 +359,8 @@ export function ScheduleView({ user, pgId }) {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )}
 
                 {/* Header */}

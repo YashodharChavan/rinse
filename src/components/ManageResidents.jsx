@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PullToRefresh } from './PullToRefresh'
 import { supabase } from '../lib/supabaseClient'
+import { createPortal } from 'react-dom'
 
 export function ManageResidents({ pgId, ownerId }) {
   const [residents, setResidents] = useState([])
@@ -370,7 +371,7 @@ export function ManageResidents({ pgId, ownerId }) {
         )}
 
         {/* Retro Warning Modal */}
-        {actionModal && (
+        {actionModal && createPortal(
           <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
             <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
               <div className="text-5xl mb-4">⚠️</div>
@@ -411,7 +412,8 @@ export function ManageResidents({ pgId, ownerId }) {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </PullToRefresh>
