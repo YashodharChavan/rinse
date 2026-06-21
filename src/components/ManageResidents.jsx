@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { PullToRefresh } from './PullToRefresh'
 import { supabase } from '../lib/supabaseClient'
 
 export function ManageResidents({ pgId, ownerId }) {
@@ -168,248 +169,251 @@ export function ManageResidents({ pgId, ownerId }) {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <PullToRefresh onRefresh={fetchData}>
 
-      {/* 1. PENDING APPROVALS SECTION - COMPACT BAR UI */}
-      <div className="border-4 border-black p-3 sm:p-4 bg-pink-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-black tracking-tight uppercase">Pending Approvals</h2>
-          <span className="bg-black text-white font-black px-2 py-0.5 text-sm">{requests.length}</span>
-        </div>
+      <div className="space-y-6 relative">
 
-        {requests.length === 0 ? (
-          <div className="text-center p-4 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-sm font-bold">No pending requests.</p>
+        {/* 1. PENDING APPROVALS SECTION - COMPACT BAR UI */}
+        <div className="border-4 border-black p-3 sm:p-4 bg-pink-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg sm:text-xl font-black tracking-tight uppercase">Pending Approvals</h2>
+            <span className="bg-black text-white font-black px-2 py-0.5 text-sm">{requests.length}</span>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {requests.map((req) => (
-              <div key={req.id} className="border-4 border-black p-2 sm:p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex flex-row justify-between items-center gap-2">
 
-                <div className="flex-1 min-w-0">
-                  <p className="font-black text-sm sm:text-base truncate">{req.profiles?.full_name || 'Unknown User'}</p>
-                  <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold text-gray-600 truncate">
-                    <span>{req.profiles?.phone || 'No phone'}</span>
-                    <span>•</span>
-                    <span>{new Date(req.created_at).toLocaleDateString()}</span>
+          {requests.length === 0 ? (
+            <div className="text-center p-4 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-sm font-bold">No pending requests.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {requests.map((req) => (
+                <div key={req.id} className="border-4 border-black p-2 sm:p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex flex-row justify-between items-center gap-2">
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-sm sm:text-base truncate">{req.profiles?.full_name || 'Unknown User'}</p>
+                    <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold text-gray-600 truncate">
+                      <span>{req.profiles?.phone || 'No phone'}</span>
+                      <span>•</span>
+                      <span>{new Date(req.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    disabled={updating}
-                    onClick={() => handleRejectRequest(req.id, req.resident_id)}
-                    className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-300 font-black hover:bg-red-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
-                    title="Reject"
-                  >
-                    ✕
-                  </button>
-                  <button
-                    disabled={updating}
-                    onClick={() => handleApproveRequest(req.id, req.resident_id)}
-                    className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-green-300 font-black hover:bg-green-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
-                    title="Approve"
-                  >
-                    ✓
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 2. EXISTING RESIDENTS SECTION - COMPACT BAR UI */}
-      <div className="border-4 border-black p-3 sm:p-4 bg-blue-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight">
-            Residents ({filteredResidents.length})
-          </h2>
-        </div>
-
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="🔍 Search name or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border-4 border-black p-2 font-bold text-sm focus:outline-none focus:bg-yellow-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
-          />
-        </div>
-
-        {filteredResidents.length === 0 ? (
-          <div className="text-center p-4 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-sm font-bold">
-              {residents.length === 0 ? 'No residents yet.' : 'No matches found.'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredResidents.map((resident) => (
-              <div
-                key={resident.id}
-                className={`border-4 border-black p-2 sm:p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex flex-row justify-between items-center gap-2 transition-colors cursor-pointer ${resident.is_approved ? 'hover:bg-cyan-50' : 'opacity-75 hover:opacity-100 bg-gray-50'
-                  }`}
-                onClick={() => setSelectedResident(resident)}
-              >
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-black text-sm sm:text-base truncate">{resident.full_name}</p>
-                    {resident.is_approved ? (
-                      <span className="bg-green-100 border border-green-600 text-green-700 font-black px-1 py-[1px] text-[8px] sm:text-[10px] uppercase tracking-wider shrink-0">Active</span>
-                    ) : (
-                      <span className="bg-orange-100 border border-orange-600 text-orange-700 font-black px-1 py-[1px] text-[8px] sm:text-[10px] uppercase tracking-wider shrink-0">Revoked</span>
-                    )}
-                  </div>
-                  <p className="font-bold text-gray-600 text-[10px] sm:text-xs truncate">{resident.phone || 'No phone'}</p>
-                </div>
-
-                <div className="flex gap-1 shrink-0">
-                  {resident.is_approved ? (
+                  <div className="flex gap-1 shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); triggerRemovalModal(resident); }}
-                      className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-orange-300 font-black hover:bg-orange-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-                      title="Revoke Access"
+                      disabled={updating}
+                      onClick={() => handleRejectRequest(req.id, req.resident_id)}
+                      className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-300 font-black hover:bg-red-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
+                      title="Reject"
                     >
                       ✕
                     </button>
-                  ) : (
-                    <>
+                    <button
+                      disabled={updating}
+                      onClick={() => handleApproveRequest(req.id, req.resident_id)}
+                      className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-green-300 font-black hover:bg-green-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
+                      title="Approve"
+                    >
+                      ✓
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 2. EXISTING RESIDENTS SECTION - COMPACT BAR UI */}
+        <div className="border-4 border-black p-3 sm:p-4 bg-blue-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight">
+              Residents ({filteredResidents.length})
+            </h2>
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="🔍 Search name or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full border-4 border-black p-2 font-bold text-sm focus:outline-none focus:bg-yellow-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
+            />
+          </div>
+
+          {filteredResidents.length === 0 ? (
+            <div className="text-center p-4 border-4 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-sm font-bold">
+                {residents.length === 0 ? 'No residents yet.' : 'No matches found.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredResidents.map((resident) => (
+                <div
+                  key={resident.id}
+                  className={`border-4 border-black p-2 sm:p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex flex-row justify-between items-center gap-2 transition-colors cursor-pointer ${resident.is_approved ? 'hover:bg-cyan-50' : 'opacity-75 hover:opacity-100 bg-gray-50'
+                    }`}
+                  onClick={() => setSelectedResident(resident)}
+                >
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-black text-sm sm:text-base truncate">{resident.full_name}</p>
+                      {resident.is_approved ? (
+                        <span className="bg-green-100 border border-green-600 text-green-700 font-black px-1 py-[1px] text-[8px] sm:text-[10px] uppercase tracking-wider shrink-0">Active</span>
+                      ) : (
+                        <span className="bg-orange-100 border border-orange-600 text-orange-700 font-black px-1 py-[1px] text-[8px] sm:text-[10px] uppercase tracking-wider shrink-0">Revoked</span>
+                      )}
+                    </div>
+                    <p className="font-bold text-gray-600 text-[10px] sm:text-xs truncate">{resident.phone || 'No phone'}</p>
+                  </div>
+
+                  <div className="flex gap-1 shrink-0">
+                    {resident.is_approved ? (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleApprove(resident.id); }}
-                        className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-green-300 font-black hover:bg-green-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-                        title="Approve Resident"
+                        onClick={(e) => { e.stopPropagation(); triggerRemovalModal(resident); }}
+                        className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-orange-300 font-black hover:bg-orange-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                        title="Revoke Access"
                       >
-                        ✓
+                        ✕
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); triggerDeletionModal(resident); }}
-                        className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-400 font-black hover:bg-red-500 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-                        title="Delete Record"
-                      >
-                        🗑️
-                      </button>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleApprove(resident.id); }}
+                          className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-green-300 font-black hover:bg-green-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          title="Approve Resident"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); triggerDeletionModal(resident); }}
+                          className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-400 font-black hover:bg-red-500 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          title="Delete Record"
+                        >
+                          🗑️
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Profile Info Modal */}
+        {selectedResident && (
+          <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mt-0">
+            <div className="border-4 border-black p-6 sm:p-8 bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full">
+              <h2 className="text-2xl font-black mb-6 uppercase tracking-tight truncate">
+                {selectedResident.full_name}
+              </h2>
+
+              <div className="space-y-4 mb-8 border-4 border-black p-4 bg-gray-100">
+                <div>
+                  <p className="font-black text-sm text-gray-600">PHONE</p>
+                  <p className="font-bold text-lg">{selectedResident.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="font-black text-sm text-gray-600">STATUS</p>
+                  <p className={`font-bold text-lg ${selectedResident.is_approved ? 'text-green-600' : 'text-orange-600'}`}>
+                    {selectedResident.is_approved ? 'APPROVED' : 'DISAPPROVED'}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
+                  <p className="font-black text-sm uppercase">Wash Score</p>
+                  <p className="font-black text-2xl">{selectedResident.wash_score ?? 100}</p>
                 </div>
               </div>
-            ))}
+
+              <div className="flex flex-col gap-3">
+                {selectedResident.is_approved && (
+                  <button
+                    onClick={() => triggerRemovalModal(selectedResident)}
+                    disabled={updating}
+                    className="w-full border-4 border-black py-3 bg-orange-300 font-black hover:bg-orange-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
+                  >
+                    REVOKE ACCESS
+                  </button>
+                )}
+
+                {!selectedResident.is_approved && (
+                  <>
+                    <button
+                      onClick={() => handleApprove(selectedResident.id)}
+                      disabled={updating}
+                      className="w-full border-4 border-black py-3 bg-green-300 font-black hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
+                    >
+                      APPROVE ACCESS
+                    </button>
+                    <button
+                      onClick={() => triggerDeletionModal(selectedResident)}
+                      disabled={updating}
+                      className="w-full border-4 border-black py-3 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 text-white"
+                    >
+                      DELETE RECORD
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setSelectedResident(null)}
+                  className="w-full border-4 border-black py-3 bg-gray-300 font-black hover:bg-gray-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                >
+                  CLOSE
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Retro Warning Modal */}
+        {actionModal && (
+          <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
+            <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
+              <div className="text-5xl mb-4">⚠️</div>
+              <h3 className="text-3xl font-black mb-4 uppercase tracking-tight">Hold Up!</h3>
+
+              {actionModal.type === 'remove' && (
+                <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
+                  Are you sure you want to revoke access for this resident? They will not be able to book machines.
+                </p>
+              )}
+
+              {actionModal.type === 'delete' && (
+                <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
+                  Are you sure you want to permanently hide this record? This action cannot be undone.
+                </p>
+              )}
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setActionModal(null)}
+                  className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
+                >
+                  NEVERMIND
+                </button>
+                <button
+                  onClick={confirmAction}
+                  disabled={updating}
+                  className={`w-full border-4 border-black py-4 font-black active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 ${actionModal.type === 'remove'
+                    ? 'bg-orange-400 hover:bg-orange-500'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                    }`}
+                >
+                  {updating
+                    ? 'PROCESSING...'
+                    : actionModal.type === 'remove'
+                      ? 'YES, REVOKE'
+                      : 'YES, DELETE'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Profile Info Modal */}
-      {selectedResident && (
-        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mt-0">
-          <div className="border-4 border-black p-6 sm:p-8 bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full">
-            <h2 className="text-2xl font-black mb-6 uppercase tracking-tight truncate">
-              {selectedResident.full_name}
-            </h2>
-
-            <div className="space-y-4 mb-8 border-4 border-black p-4 bg-gray-100">
-              <div>
-                <p className="font-black text-sm text-gray-600">PHONE</p>
-                <p className="font-bold text-lg">{selectedResident.phone || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="font-black text-sm text-gray-600">STATUS</p>
-                <p className={`font-bold text-lg ${selectedResident.is_approved ? 'text-green-600' : 'text-orange-600'}`}>
-                  {selectedResident.is_approved ? 'APPROVED' : 'DISAPPROVED'}
-                </p>
-              </div>
-              <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
-                <p className="font-black text-sm uppercase">Wash Score</p>
-                <p className="font-black text-2xl">{selectedResident.wash_score ?? 100}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {selectedResident.is_approved && (
-                <button
-                  onClick={() => triggerRemovalModal(selectedResident)}
-                  disabled={updating}
-                  className="w-full border-4 border-black py-3 bg-orange-300 font-black hover:bg-orange-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
-                >
-                  REVOKE ACCESS
-                </button>
-              )}
-
-              {!selectedResident.is_approved && (
-                <>
-                  <button
-                    onClick={() => handleApprove(selectedResident.id)}
-                    disabled={updating}
-                    className="w-full border-4 border-black py-3 bg-green-300 font-black hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
-                  >
-                    APPROVE ACCESS
-                  </button>
-                  <button
-                    onClick={() => triggerDeletionModal(selectedResident)}
-                    disabled={updating}
-                    className="w-full border-4 border-black py-3 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 text-white"
-                  >
-                    DELETE RECORD
-                  </button>
-                </>
-              )}
-
-              <button
-                onClick={() => setSelectedResident(null)}
-                className="w-full border-4 border-black py-3 bg-gray-300 font-black hover:bg-gray-400 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-              >
-                CLOSE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Retro Warning Modal */}
-      {actionModal && (
-        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
-          <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
-            <div className="text-5xl mb-4">⚠️</div>
-            <h3 className="text-3xl font-black mb-4 uppercase tracking-tight">Hold Up!</h3>
-
-            {actionModal.type === 'remove' && (
-              <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
-                Are you sure you want to revoke access for this resident? They will not be able to book machines.
-              </p>
-            )}
-
-            {actionModal.type === 'delete' && (
-              <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
-                Are you sure you want to permanently hide this record? This action cannot be undone.
-              </p>
-            )}
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => setActionModal(null)}
-                className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
-              >
-                NEVERMIND
-              </button>
-              <button
-                onClick={confirmAction}
-                disabled={updating}
-                className={`w-full border-4 border-black py-4 font-black active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 ${actionModal.type === 'remove'
-                    ? 'bg-orange-400 hover:bg-orange-500'
-                    : 'bg-red-500 hover:bg-red-600 text-white'
-                  }`}
-              >
-                {updating
-                  ? 'PROCESSING...'
-                  : actionModal.type === 'remove'
-                    ? 'YES, REVOKE'
-                    : 'YES, DELETE'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </PullToRefresh>
   )
 }

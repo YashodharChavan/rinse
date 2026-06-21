@@ -62,11 +62,11 @@ export function PullToRefresh({ onRefresh, children }) {
         {pullDistance > 0 && (
           <div className="border-4 border-black px-6 py-2 bg-yellow-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black text-sm uppercase tracking-widest flex items-center gap-2">
             {refreshing ? (
-              <><span>🔄</span> FETCHING...</>
+              <>FETCHING...</>
             ) : pullDistance >= triggerThreshold ? (
               <><span>🔥</span> RELEASE TO REFRESH</>
             ) : (
-              <><span>⬇️</span> PULL DOWN</>
+              <>PULL DOWN</>
             )}
           </div>
         )}

@@ -144,14 +144,14 @@ export function ProfileView({ user, userProfile, signOut, onProfileUpdate }) {
             onClick={() => setShowRules(true)}
             className="border-4 border-black p-4 bg-pink-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black hover:bg-pink-400 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all text-sm sm:text-base"
           >
-            📜 VIEW RULES
+            VIEW RULES
           </button>
 
           <button
             onClick={signOut}
             className="border-4 border-black p-4 bg-red-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all text-sm sm:text-base"
           >
-            🚪 SIGN OUT
+            SIGN OUT
           </button>
         </div>
 

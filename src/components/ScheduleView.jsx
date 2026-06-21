@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { PullToRefresh } from './PullToRefresh'
 
 export function ScheduleView({ user, pgId }) {
     const [selectedDate, setSelectedDate] = useState(() => new Date())
@@ -13,7 +14,7 @@ export function ScheduleView({ user, pgId }) {
 
     // Modals state
     const [bookingToDelete, setBookingToDelete] = useState(null)
-    const [selectedBooking, setSelectedBooking] = useState(null) 
+    const [selectedBooking, setSelectedBooking] = useState(null)
 
     const scrollContainerRef = useRef(null)
 
@@ -265,295 +266,298 @@ export function ScheduleView({ user, pgId }) {
     }
 
     return (
-        <div className="space-y-6 relative p-2 sm:p-2">
+        <PullToRefresh onRefresh={fetchBookings}>
 
-            {/* BOOKING DETAILS MODAL */}
-            {selectedBooking && (
-                <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
-                    <div className="border-4 border-black p-6 sm:p-8 bg-cyan-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full relative">
-                        <button
-                            onClick={() => setSelectedBooking(null)}
-                            className="absolute -top-4 -right-4 border-4 border-black w-10 h-10 bg-white font-black text-xl hover:bg-red-400 active:translate-y-1 active:translate-x-1 transition-all flex items-center justify-center z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                        >
-                            ✕
-                        </button>
+            <div className="space-y-6 relative p-2 sm:p-2">
 
-                        <div className="text-center mb-6 flex flex-col items-center">
-                            <img
-                                src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${selectedBooking.booking.profiles?.full_name || 'Resident'}`}
-                                alt="User Avatar"
-                                className="w-18 h-18 sm:w-24 sm:h-24 border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 mt-8 sm:mt-4 object-contain"
-                            />
-                            <h3 className="text-2xl font-black uppercase tracking-tight truncate border-b-4 border-black pb-2 w-full">
-                                {selectedBooking.booking.profiles?.full_name || 'Resident'}
-                            </h3>
-                        </div>
-
-                        <div className="space-y-4 mb-6 border-4 border-black p-4 bg-white">
-                            <div>
-                                <p className="font-black text-[10px] text-gray-500 uppercase">Wash Block</p>
-                                <p className="font-bold text-lg">
-                                    {formatMinutes(selectedBooking.slot.startMinute)} - {formatMinutes(selectedBooking.slot.endMinute)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="font-black text-[10px] text-gray-500 uppercase">Phone</p>
-                                <p className="font-bold text-lg">{selectedBooking.booking.profiles?.phone || 'N/A'}</p>
-                            </div>
-                            <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
-                                <p className="font-black text-[10px] uppercase">Current Wash Score</p>
-                                <p className="font-black text-xl">{selectedBooking.booking.profiles?.wash_score ?? 100}</p>
-                            </div>
-                            
-                            {/* SCORE PENALTY/REWARD BANNERS */}
-                            {selectedBooking.booking.status === 'expired' && (
-                                <div className="bg-red-500 border-2 border-black p-2 mt-2 text-center text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <p className="font-black text-xs uppercase tracking-widest">Ghost Penalty Applied (-10)</p>
-                                </div>
-                            )}
-                            {selectedBooking.booking.status === 'completed' && (
-                                <div className="bg-green-400 border-2 border-black p-2 mt-2 text-center text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <p className="font-black text-xs uppercase tracking-widest">Wash Completed (+2)</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={() => setSelectedBooking(null)}
-                            className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
-                        >
-                            CLOSE DETAILS
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* RETRO CONFIRMATION MODAL */}
-            {bookingToDelete && (
-                <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
-                    <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
-                        <div className="text-5xl mb-4">⚠️</div>
-                        <h3 className="text-3xl font-black mb-4 uppercase tracking-tight">Hold Up!</h3>
-                        <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
-                            Are you absolutely sure you want to cancel this wash? Someone else might steal your spot!
-                        </p>
-
-                        <div className="flex flex-col gap-3">
+                {/* BOOKING DETAILS MODAL */}
+                {selectedBooking && (
+                    <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
+                        <div className="border-4 border-black p-6 sm:p-8 bg-cyan-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full relative">
                             <button
-                                onClick={() => setBookingToDelete(null)}
+                                onClick={() => setSelectedBooking(null)}
+                                className="absolute -top-4 -right-4 border-4 border-black w-10 h-10 bg-white font-black text-xl hover:bg-red-400 active:translate-y-1 active:translate-x-1 transition-all flex items-center justify-center z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                            >
+                                ✕
+                            </button>
+
+                            <div className="text-center mb-6 flex flex-col items-center">
+                                <img
+                                    src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${selectedBooking.booking.profiles?.full_name || 'Resident'}`}
+                                    alt="User Avatar"
+                                    className="w-18 h-18 sm:w-24 sm:h-24 border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 mt-8 sm:mt-4 object-contain"
+                                />
+                                <h3 className="text-2xl font-black uppercase tracking-tight truncate border-b-4 border-black pb-2 w-full">
+                                    {selectedBooking.booking.profiles?.full_name || 'Resident'}
+                                </h3>
+                            </div>
+
+                            <div className="space-y-4 mb-6 border-4 border-black p-4 bg-white">
+                                <div>
+                                    <p className="font-black text-[10px] text-gray-500 uppercase">Wash Block</p>
+                                    <p className="font-bold text-lg">
+                                        {formatMinutes(selectedBooking.slot.startMinute)} - {formatMinutes(selectedBooking.slot.endMinute)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="font-black text-[10px] text-gray-500 uppercase">Phone</p>
+                                    <p className="font-bold text-lg">{selectedBooking.booking.profiles?.phone || 'N/A'}</p>
+                                </div>
+                                <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
+                                    <p className="font-black text-[10px] uppercase">Current Wash Score</p>
+                                    <p className="font-black text-xl">{selectedBooking.booking.profiles?.wash_score ?? 100}</p>
+                                </div>
+
+                                {/* SCORE PENALTY/REWARD BANNERS */}
+                                {selectedBooking.booking.status === 'expired' && (
+                                    <div className="bg-red-500 border-2 border-black p-2 mt-2 text-center text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                        <p className="font-black text-xs uppercase tracking-widest">Ghost Penalty Applied (-10)</p>
+                                    </div>
+                                )}
+                                {selectedBooking.booking.status === 'completed' && (
+                                    <div className="bg-green-400 border-2 border-black p-2 mt-2 text-center text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                        <p className="font-black text-xs uppercase tracking-widest">Wash Completed (+2)</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => setSelectedBooking(null)}
                                 className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
                             >
-                                NEVERMIND, KEEP IT
-                            </button>
-                            <button
-                                onClick={confirmCancelBooking}
-                                disabled={inserting}
-                                className="w-full border-4 border-black py-4 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 text-white"
-                            >
-                                {inserting ? 'DELETING...' : 'YES, DELETE IT'}
+                                CLOSE DETAILS
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Header */}
-            <div className="sticky top-0 z-50 border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <div className="flex justify-between items-center gap-2 mb-3">
-                    <h2 className="text-xl sm:text-2xl font-black tracking-tight m-0 leading-none">
-                        SCHEDULE
-                    </h2>
+                {/* RETRO CONFIRMATION MODAL */}
+                {bookingToDelete && (
+                    <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
+                        <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
+                            <div className="text-5xl mb-4">⚠️</div>
+                            <h3 className="text-3xl font-black mb-4 uppercase tracking-tight">Hold Up!</h3>
+                            <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
+                                Are you absolutely sure you want to cancel this wash? Someone else might steal your spot!
+                            </p>
 
-                    <select
-                        value={selectedMachine?.id || ''}
-                        onChange={(e) => {
-                            const machine = machines.find((m) => m.id === e.target.value)
-                            setSelectedMachine(machine)
-                        }}
-                        className="border-4 border-black p-1 sm:p-2 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm max-w-[150px] sm:max-w-none"
-                    >
-                        {machines.map((machine) => (
-                            <option key={machine.id} value={machine.id}>
-                                {machine.machine_number} ({machine.cycle_duration}m)
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="flex items-center justify-between gap-2">
-                    <button
-                        onClick={goToPreviousDay}
-                        className="border-4 border-black px-2 py-1 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 transition-all text-xs sm:text-sm"
-                    >
-                        ← PREV
-                    </button>
-                    <div className="border-4 border-black px-2 py-1 bg-white font-black text-center flex-1 text-xs sm:text-sm">
-                        {formatDate(selectedDate)}
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => setBookingToDelete(null)}
+                                    className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
+                                >
+                                    NEVERMIND, KEEP IT
+                                </button>
+                                <button
+                                    onClick={confirmCancelBooking}
+                                    disabled={inserting}
+                                    className="w-full border-4 border-black py-4 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 text-white"
+                                >
+                                    {inserting ? 'DELETING...' : 'YES, DELETE IT'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <button
-                        onClick={goToNextDay}
-                        className="border-4 border-black px-2 py-1 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 transition-all text-xs sm:text-sm"
-                    >
-                        NEXT →
-                    </button>
-                </div>
-            </div>
+                )}
 
-            {error && (
-                <div className="border-4 border-black p-4 bg-red-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-red-800">{error}</p>
-                </div>
-            )}
+                {/* Header */}
+                <div className="sticky top-0 z-50 border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="flex justify-between items-center gap-2 mb-3">
+                        <h2 className="text-xl sm:text-2xl font-black tracking-tight m-0 leading-none">
+                            SCHEDULE
+                        </h2>
 
-            {/* Calendar Grid */}
-            <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex overflow-hidden relative">
-
-                <div className="w-14 sm:w-16 bg-gray-100 shrink-0">
-                    {Array.from({ length: 24 }).map((_, hour) => (
-                        <div
-                            key={`label-${hour}`}
-                            className="h-[60px] border-b-2 border-r-4 border-gray-300 border-r-black flex items-start justify-center pt-1 font-black text-[10px] sm:text-xs"
+                        <select
+                            value={selectedMachine?.id || ''}
+                            onChange={(e) => {
+                                const machine = machines.find((m) => m.id === e.target.value)
+                                setSelectedMachine(machine)
+                            }}
+                            className="border-4 border-black p-1 sm:p-2 font-bold bg-white focus:outline-none focus:ring-2 focus:ring-black cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm max-w-[150px] sm:max-w-none"
                         >
-                            {String(hour).padStart(2, '0')}:00
+                            {machines.map((machine) => (
+                                <option key={machine.id} value={machine.id}>
+                                    {machine.machine_number} ({machine.cycle_duration}m)
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                        <button
+                            onClick={goToPreviousDay}
+                            className="border-4 border-black px-2 py-1 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 transition-all text-xs sm:text-sm"
+                        >
+                            ← PREV
+                        </button>
+                        <div className="border-4 border-black px-2 py-1 bg-white font-black text-center flex-1 text-xs sm:text-sm">
+                            {formatDate(selectedDate)}
                         </div>
-                    ))}
+                        <button
+                            onClick={goToNextDay}
+                            className="border-4 border-black px-2 py-1 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 transition-all text-xs sm:text-sm"
+                        >
+                            NEXT →
+                        </button>
+                    </div>
                 </div>
 
-                <div
-                    ref={scrollContainerRef}
-                    className="flex-1 overflow-y-auto relative scroll-smooth"
-                >
-                    <div className="relative w-full h-[1440px]">
+                {error && (
+                    <div className="border-4 border-black p-4 bg-red-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-red-800">{error}</p>
+                    </div>
+                )}
 
+                {/* Calendar Grid */}
+                <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex overflow-hidden relative">
+
+                    <div className="w-14 sm:w-16 bg-gray-100 shrink-0">
                         {Array.from({ length: 24 }).map((_, hour) => (
                             <div
-                                key={`divider-${hour}`}
-                                className="absolute w-full border-t-2 border-gray-200"
-                                style={{ top: `${hour * 60}px` }}
-                            />
-                        ))}
-
-                        {currentMinute >= 0 && (
-                            <div
-                                className="absolute w-full z-50 flex items-center pointer-events-none"
-                                style={{ top: `${currentMinute}px` }}
+                                key={`label-${hour}`}
+                                className="h-[60px] border-b-2 border-r-4 border-gray-300 border-r-black flex items-start justify-center pt-1 font-black text-[10px] sm:text-xs"
                             >
-                                <div className="w-2 h-2 rounded-full bg-red-500 absolute -left-1"></div>
-                                <div className="w-full border-t-2 border-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
+                                {String(hour).padStart(2, '0')}:00
                             </div>
-                        )}
+                        ))}
+                    </div>
 
-                        {slots.map((slot) => {
-                            const booking = getBookingForSlot(slot)
-                            const isBooked = !!booking
-                            const isPast = isSlotPast(slot)
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex-1 overflow-y-auto relative scroll-smooth"
+                    >
+                        <div className="relative w-full h-[1440px]">
 
-                            const isOwnerBooking = isBooked && booking.profiles?.role === 'owner'
-
-                            let bgColor = 'bg-white'
-                            let borderStyle = 'border-4 border-dashed border-black'
-                            let cursor = 'cursor-pointer'
-                            let hoverClass = 'hover:bg-cyan-100 hover:border-solid hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all'
-
-                            if (isPast && !isBooked) {
-                                bgColor = 'bg-gray-200'
-                                borderStyle = 'border-2 border-black opacity-60'
-                                cursor = 'cursor-not-allowed'
-                                hoverClass = ''
-                            } else if (isBooked) {
-                                const status = booking.status || 'scheduled'
-
-                                if (status === 'scheduled') bgColor = isOwnerBooking ? 'bg-purple-300' : 'bg-blue-300'
-                                if (status === 'active') bgColor = 'bg-yellow-300'
-                                if (status === 'completed') bgColor = 'bg-green-300'
-                                if (status === 'expired') bgColor = 'bg-red-300' // NEW: Expired styling
-
-                                borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                cursor = 'cursor-pointer'
-                                hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
-                            }
-
-                            return (
+                            {Array.from({ length: 24 }).map((_, hour) => (
                                 <div
-                                    key={slot.id}
-                                    onClick={() => handleSlotClick(slot)}
-                                    className={`absolute left-2 right-2 ${bgColor} ${borderStyle} ${cursor} ${hoverClass} p-0 flex items-center overflow-hidden z-10`}
-                                    style={{
-                                        top: `${slot.startMinute}px`,
-                                        height: `${slot.cycleDuration}px`
-                                    }}
+                                    key={`divider-${hour}`}
+                                    className="absolute w-full border-t-2 border-gray-200"
+                                    style={{ top: `${hour * 60}px` }}
+                                />
+                            ))}
+
+                            {currentMinute >= 0 && (
+                                <div
+                                    className="absolute w-full z-50 flex items-center pointer-events-none"
+                                    style={{ top: `${currentMinute}px` }}
                                 >
-                                    <div className={`font-black text-[10px] sm:text-xs leading-none w-full px-2 flex flex-row items-center ${isBooked ? 'justify-between' : 'justify-center'} gap-2 h-full relative`}>
-
-                                        <div className={`whitespace-nowrap ${isBooked ? 'opacity-80' : ''}`}>
-                                            {`${formatMinutes(slot.startMinute)} - ${formatMinutes(slot.endMinute)}`}
-                                        </div>
-
-                                        {isPast && !isBooked && <span>(PAST)</span>}
-
-                                        {isBooked && (
-                                            <div className="flex flex-1 justify-end items-center gap-1 sm:gap-2 pr-5 sm:pr-6 overflow-hidden">
-                                                
-                                                {/* SCORE INDICATORS ON THE SCHEDULE BLOCKS */}
-                                                {booking.status === 'expired' && (
-                                                    <span className="bg-red-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Penalty">
-                                                        -10
-                                                    </span>
-                                                )}
-                                                {booking.status === 'completed' && (
-                                                    <span className="bg-green-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Reward">
-                                                        +2
-                                                    </span>
-                                                )}
-
-                                                <span className="bg-white px-1 py-0.5 border-2 border-black tracking-wider uppercase text-[8px] sm:text-[9px] shrink-0">
-                                                    {booking.status}
-                                                </span>
-                                                <span className="truncate max-w-[60px] sm:max-w-[100px]">
-                                                    {isOwnerBooking && '👑 '}
-                                                    {booking.profiles?.full_name?.split(' ')[0] || 'Resident'}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {isBooked && booking.resident_id === user.id && booking.status === 'scheduled' && (
-                                            <button
-                                                onClick={(e) => requestCancelBooking(e, booking.id)}
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-red-400 hover:bg-red-500 border-2 border-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all text-[8px] sm:text-[10px] text-white"
-                                                title="Cancel Wash"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
-                                    </div>
+                                    <div className="w-2 h-2 rounded-full bg-red-500 absolute -left-1"></div>
+                                    <div className="w-full border-t-2 border-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
                                 </div>
-                            )
-                        })}
+                            )}
+
+                            {slots.map((slot) => {
+                                const booking = getBookingForSlot(slot)
+                                const isBooked = !!booking
+                                const isPast = isSlotPast(slot)
+
+                                const isOwnerBooking = isBooked && booking.profiles?.role === 'owner'
+
+                                let bgColor = 'bg-white'
+                                let borderStyle = 'border-4 border-dashed border-black'
+                                let cursor = 'cursor-pointer'
+                                let hoverClass = 'hover:bg-cyan-100 hover:border-solid hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all'
+
+                                if (isPast && !isBooked) {
+                                    bgColor = 'bg-gray-200'
+                                    borderStyle = 'border-2 border-black opacity-60'
+                                    cursor = 'cursor-not-allowed'
+                                    hoverClass = ''
+                                } else if (isBooked) {
+                                    const status = booking.status || 'scheduled'
+
+                                    if (status === 'scheduled') bgColor = isOwnerBooking ? 'bg-purple-300' : 'bg-blue-300'
+                                    if (status === 'active') bgColor = 'bg-yellow-300'
+                                    if (status === 'completed') bgColor = 'bg-green-300'
+                                    if (status === 'expired') bgColor = 'bg-red-300' // NEW: Expired styling
+
+                                    borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                                    cursor = 'cursor-pointer'
+                                    hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
+                                }
+
+                                return (
+                                    <div
+                                        key={slot.id}
+                                        onClick={() => handleSlotClick(slot)}
+                                        className={`absolute left-2 right-2 ${bgColor} ${borderStyle} ${cursor} ${hoverClass} p-0 flex items-center overflow-hidden z-10`}
+                                        style={{
+                                            top: `${slot.startMinute}px`,
+                                            height: `${slot.cycleDuration}px`
+                                        }}
+                                    >
+                                        <div className={`font-black text-[10px] sm:text-xs leading-none w-full px-2 flex flex-row items-center ${isBooked ? 'justify-between' : 'justify-center'} gap-2 h-full relative`}>
+
+                                            <div className={`whitespace-nowrap ${isBooked ? 'opacity-80' : ''}`}>
+                                                {`${formatMinutes(slot.startMinute)} - ${formatMinutes(slot.endMinute)}`}
+                                            </div>
+
+                                            {isPast && !isBooked && <span>(PAST)</span>}
+
+                                            {isBooked && (
+                                                <div className="flex flex-1 justify-end items-center gap-1 sm:gap-2 pr-5 sm:pr-6 overflow-hidden">
+
+                                                    {/* SCORE INDICATORS ON THE SCHEDULE BLOCKS */}
+                                                    {booking.status === 'expired' && (
+                                                        <span className="bg-red-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Penalty">
+                                                            -10
+                                                        </span>
+                                                    )}
+                                                    {booking.status === 'completed' && (
+                                                        <span className="bg-green-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Reward">
+                                                            +2
+                                                        </span>
+                                                    )}
+
+                                                    <span className="bg-white px-1 py-0.5 border-2 border-black tracking-wider uppercase text-[8px] sm:text-[9px] shrink-0">
+                                                        {booking.status}
+                                                    </span>
+                                                    <span className="truncate max-w-[60px] sm:max-w-[100px]">
+                                                        {isOwnerBooking && '👑 '}
+                                                        {booking.profiles?.full_name?.split(' ')[0] || 'Resident'}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {isBooked && booking.resident_id === user.id && booking.status === 'scheduled' && (
+                                                <button
+                                                    onClick={(e) => requestCancelBooking(e, booking.id)}
+                                                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-red-400 hover:bg-red-500 border-2 border-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all text-[8px] sm:text-[10px] text-white"
+                                                    title="Cancel Wash"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Legend - Updated with EXPIRED */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4">
+                    <div className="border-4 border-dashed border-black py-2 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">AVAILABLE</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">SCHEDULED</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-purple-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">OWNER</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-red-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">EXPIRED</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-60">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">PAST</p>
                     </div>
                 </div>
             </div>
-
-            {/* Legend - Updated with EXPIRED */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4">
-                <div className="border-4 border-dashed border-black py-2 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">AVAILABLE</p>
-                </div>
-                <div className="border-4 border-black py-2 bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">SCHEDULED</p>
-                </div>
-                <div className="border-4 border-black py-2 bg-purple-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">OWNER</p>
-                </div>
-                <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
-                </div>
-                <div className="border-4 border-black py-2 bg-red-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">EXPIRED</p>
-                </div>
-                <div className="border-4 border-black py-2 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-60">
-                    <p className="font-black text-[9px] sm:text-[10px] text-center">PAST</p>
-                </div>
-            </div>
-        </div>
+        </PullToRefresh>
     )
 }

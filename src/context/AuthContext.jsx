@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { Capacitor } from '@capacitor/core'
 
 const AuthContext = createContext()
 
@@ -43,7 +44,7 @@ export function AuthProvider({ children }) {
         provider: 'google',
         options: {
           redirectTo: Capacitor.isNativePlatform()
-            ? 'com.rinse.app://login-callback'
+            ? 'com.rinse.app://login-callback/'
             : window.location.origin,
         },
       })
