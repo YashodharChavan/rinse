@@ -5,13 +5,14 @@ import { MachineManager } from '../components/MachineManager'
 import { ManageResidents } from '../components/ManageResidents'
 import { ScheduleView } from '../components/ScheduleView'
 import { PullToRefresh } from '../components/PullToRefresh'
+import { LeaderboardView } from '../components/LeaderboardView'
 
 export function OwnerDashboard() {
   const { user, signOut } = useAuth()
-  
+
   // Tab State
   const [activeTab, setActiveTab] = useState('home')
-  
+
   // Data States
   const [pgDetails, setPgDetails] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
@@ -56,7 +57,7 @@ export function OwnerDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, phone, role, pg_id, is_approved, wash_score')
@@ -65,7 +66,7 @@ export function OwnerDashboard() {
 
       if (profileError) throw profileError
       if (!profileData?.pg_id) return
-      
+
       setUserProfile(profileData)
 
       const { data: pgData, error: pgError } = await supabase
@@ -73,10 +74,10 @@ export function OwnerDashboard() {
         .select('*')
         .eq('id', profileData.pg_id)
         .single()
-        
+
       if (pgError) throw pgError
       if (pgData) setPgDetails(pgData)
-      
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
@@ -213,11 +214,11 @@ export function OwnerDashboard() {
       if (newStatus === 'completed') {
         const currentScore = parseInt(userProfile.wash_score ?? 100)
         const newScore = Math.min(100, currentScore + 2)
-        
+
         await supabase.from('profiles').update({ wash_score: newScore }).eq('id', user.id)
         setUserProfile(prev => ({ ...prev, wash_score: newScore }))
       }
-      await fetchMyBookings() 
+      await fetchMyBookings()
     } catch (err) {
       console.error(`Error updating to ${newStatus}:`, err)
       alert('Failed to update status.')
@@ -246,7 +247,7 @@ export function OwnerDashboard() {
   const renderHomeTab = () => {
     const seenMachines = new Set()
     const nextBookingsPerMachine = upcomingBookings.filter((booking) => {
-      if (seenMachines.has(booking.machine_id)) return false 
+      if (seenMachines.has(booking.machine_id)) return false
       seenMachines.add(booking.machine_id)
       return true
     })
@@ -254,7 +255,7 @@ export function OwnerDashboard() {
     return (
       <PullToRefresh onRefresh={fetchMyBookings}>
         <div className="space-y-6 p-2 sm:p-4 min-h-screen">
-          
+
           <div className="border-4 border-black p-6 bg-blue-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-black mb-2 tracking-tight uppercase truncate">
@@ -262,7 +263,7 @@ export function OwnerDashboard() {
               </h2>
               <p className="font-bold text-sm sm:text-base mb-2">📍 {pgDetails?.address || 'Address not set'}</p>
               <p className="flex flex-wrap items-center gap-2 font-bold text-sm sm:text-base">
-                🔗 Invite Code: 
+                🔗 Invite Code:
                 <span className="bg-white px-2 py-1 border-2 border-black tracking-widest">{pgDetails?.invite_code || '---'}</span>
               </p>
             </div>
@@ -275,11 +276,10 @@ export function OwnerDashboard() {
           </div>
 
           <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center relative overflow-hidden">
-            
-            <div className={`absolute top-4 right-4 border-4 border-black p-1 sm:p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-              parseInt(userProfile?.wash_score ?? 100) >= 80 ? 'bg-green-300' : 
-              parseInt(userProfile?.wash_score ?? 100) >= 50 ? 'bg-yellow-300' : 'bg-red-400'
-            }`}>
+
+            <div className={`absolute top-4 right-4 border-4 border-black p-1 sm:p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${parseInt(userProfile?.wash_score ?? 100) >= 80 ? 'bg-green-300' :
+                parseInt(userProfile?.wash_score ?? 100) >= 50 ? 'bg-yellow-300' : 'bg-red-400'
+              }`}>
               <p className="font-black text-[8px] sm:text-[10px] uppercase leading-none mb-1 text-black">Wash Score</p>
               <div className="flex items-center justify-center gap-1">
                 <span className="font-black text-lg sm:text-2xl leading-none text-black">
@@ -391,14 +391,14 @@ export function OwnerDashboard() {
       {/* NEW: OWNER PROFILE EDITOR CARD (WITH DICEBEAR & MISSING PHONE WARNING) */}
       {userProfile && (
         <div className="border-4 border-black p-6 bg-pink-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row gap-6 items-start md:items-center">
-          
+
           <div className="flex flex-col items-center shrink-0 w-full md:w-auto relative">
             <img
               src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${userProfile?.full_name || 'Owner'}`}
               alt="Owner Avatar"
               className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] object-contain"
             />
-            
+
             {/* The Missing Phone Warning Alert */}
             {!userProfile?.phone && (
               <div className="mt-4 border-4 border-black bg-red-400 p-2 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-[200px] animate-pulse">
@@ -410,13 +410,13 @@ export function OwnerDashboard() {
 
           <div className="flex-1 w-full">
             <h3 className="text-2xl font-black mb-4 uppercase tracking-tight border-b-4 border-black pb-2">Your Profile</h3>
-            
+
             {isEditingProfile ? (
               <form onSubmit={handleUpdateProfileDetails} className="space-y-4">
                 <div>
                   <label className="block font-black text-sm uppercase mb-1">Full Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={editOwnerName}
                     onChange={(e) => setEditOwnerName(e.target.value)}
@@ -425,7 +425,7 @@ export function OwnerDashboard() {
                 </div>
                 <div>
                   <label className="block font-black text-sm uppercase mb-1">Phone Number</label>
-                  <input 
+                  <input
                     type="tel"
                     required
                     placeholder="+91 XXXXX XXXXX"
@@ -435,14 +435,14 @@ export function OwnerDashboard() {
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setIsEditingProfile(false)}
                     className="flex-1 border-4 border-black p-3 bg-white font-black hover:bg-gray-100 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                   >
                     CANCEL
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     disabled={updatingProfile}
                     className="flex-[2] border-4 border-black p-3 bg-lime-300 font-black hover:bg-lime-400 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
@@ -463,11 +463,10 @@ export function OwnerDashboard() {
                     {userProfile.phone || 'Not set'}
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={startEditingProfile}
-                  className={`w-full mt-4 border-4 border-black p-3 font-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${
-                    !userProfile.phone ? 'bg-red-300 hover:bg-red-400 animate-pulse' : 'bg-cyan-300 hover:bg-cyan-400'
-                  }`}
+                  className={`w-full mt-4 border-4 border-black p-3 font-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${!userProfile.phone ? 'bg-red-300 hover:bg-red-400 animate-pulse' : 'bg-cyan-300 hover:bg-cyan-400'
+                    }`}
                 >
                   ✏️ UPDATE PROFILE
                 </button>
@@ -481,13 +480,13 @@ export function OwnerDashboard() {
       {pgDetails && (
         <div className="border-4 border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
           <h3 className="text-2xl font-black mb-4 uppercase tracking-tight border-b-4 border-black pb-2">PG Details</h3>
-          
+
           {isEditingPG ? (
             <form onSubmit={handleUpdatePGDetails} className="space-y-4">
               <div>
                 <label className="block font-black text-sm uppercase mb-1">PG Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editPgName}
                   onChange={(e) => setEditPgName(e.target.value)}
@@ -496,7 +495,7 @@ export function OwnerDashboard() {
               </div>
               <div>
                 <label className="block font-black text-sm uppercase mb-1">Address</label>
-                <textarea 
+                <textarea
                   required
                   rows="3"
                   value={editPgAddress}
@@ -505,14 +504,14 @@ export function OwnerDashboard() {
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsEditingPG(false)}
                   className="flex-1 border-4 border-black p-3 bg-gray-200 font-black hover:bg-gray-300 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                 >
                   CANCEL
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={updatingPG}
                   className="flex-[2] border-4 border-black p-3 bg-green-300 font-black hover:bg-green-400 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
@@ -531,7 +530,7 @@ export function OwnerDashboard() {
                 <p className="font-black text-sm text-gray-500 uppercase">Address</p>
                 <p className="font-bold text-lg">{pgDetails.address || 'Not set'}</p>
               </div>
-              <button 
+              <button
                 onClick={startEditingPG}
                 className="w-full mt-4 border-4 border-black p-3 bg-cyan-300 font-black hover:bg-cyan-400 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
@@ -559,12 +558,12 @@ export function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-[#f4f0ea] pb-32">
       <div className="max-w-4xl mx-auto">
-        
+
         {/* RENDER ALL TABS, BUT HIDE INACTIVE ONES */}
         <div className={activeTab === 'home' ? 'block' : 'hidden'}>
           {renderHomeTab()}
         </div>
-        
+
         <div className={activeTab === 'schedule' ? 'block' : 'hidden'}>
           {pgDetails && (
             <div className="p-2 sm:p-4">
@@ -580,54 +579,66 @@ export function OwnerDashboard() {
             </div>
           )}
         </div>
-        
+
         <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
           {renderSettingsTab()}
         </div>
 
+        <div className={activeTab === 'score' ? 'block' : 'hidden'}>
+          {userProfile?.pg_id && (
+            <LeaderboardView pgId={userProfile.pg_id} currentUserId={user.id} />
+          )}
+        </div>
+
+
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 border-t-4 border-black bg-[#f4f0ea] z-50">
-        <div className="max-w-6xl mx-auto px-1 sm:px-4 py-2 grid grid-cols-4 gap-1 sm:gap-2">
+        <div className="max-w-6xl mx-auto px-1 sm:px-4 py-2 grid grid-cols-5 gap-1 sm:gap-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${
-              activeTab === 'home'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'home'
                 ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
-            📊 HOME
+            HOME
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${
-              activeTab === 'schedule'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'schedule'
                 ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
-            📅 SCHED
+            SCHEDULE
           </button>
           <button
             onClick={() => setActiveTab('residents')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${
-              activeTab === 'residents'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'residents'
                 ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
-            👥 PPL
+            PEOPLE
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${
-              activeTab === 'settings'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'settings'
                 ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
                 : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
-            }`}
+              }`}
           >
-            ⚙️ SET
+            SETTINGS
+          </button>
+          <button
+            onClick={() => setActiveTab('score')}
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'score'
+                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            RANK
           </button>
         </div>
       </div>

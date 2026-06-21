@@ -13,7 +13,7 @@ export function ScheduleView({ user, pgId }) {
 
     // Modals state
     const [bookingToDelete, setBookingToDelete] = useState(null)
-    const [selectedBooking, setSelectedBooking] = useState(null) // NEW: Controls the info popup
+    const [selectedBooking, setSelectedBooking] = useState(null) 
 
     const scrollContainerRef = useRef(null)
 
@@ -75,7 +75,6 @@ export function ScheduleView({ user, pgId }) {
         try {
             if (!selectedMachine) return
 
-            // FIXED: Using profiles(*) fetches all available profile data (including email/wash_score) safely without crashing!
             const { data, error: fetchError } = await supabase
                 .from('schedule')
                 .select('*, profiles(*)')
@@ -142,17 +141,14 @@ export function ScheduleView({ user, pgId }) {
         return slot.startMinute <= currentMinute
     }
 
-    // UPDATED: Now handles opening the popup if the slot is already booked!
     const handleSlotClick = async (slot) => {
         const booking = getBookingForSlot(slot)
 
-        // If it's already booked, open the detailed info modal instead of returning
         if (booking) {
             setSelectedBooking({ booking, slot })
             return
         }
 
-        // If it's an available slot but in the past, or we are currently inserting, ignore click
         if (isSlotPast(slot) || inserting) return
 
         try {
@@ -271,7 +267,7 @@ export function ScheduleView({ user, pgId }) {
     return (
         <div className="space-y-6 relative p-2 sm:p-2">
 
-            {/* NEW: BOOKING DETAILS MODAL */}
+            {/* BOOKING DETAILS MODAL */}
             {selectedBooking && (
                 <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
                     <div className="border-4 border-black p-6 sm:p-8 bg-cyan-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full relative">
@@ -288,7 +284,7 @@ export function ScheduleView({ user, pgId }) {
                                 alt="User Avatar"
                                 className="w-18 h-18 sm:w-24 sm:h-24 border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 mt-8 sm:mt-4 object-contain"
                             />
-                            <h3 className="text-2xl font-black uppercase tracking-tight truncate border-b-4 border-black pb-2">
+                            <h3 className="text-2xl font-black uppercase tracking-tight truncate border-b-4 border-black pb-2 w-full">
                                 {selectedBooking.booking.profiles?.full_name || 'Resident'}
                             </h3>
                         </div>
@@ -305,9 +301,21 @@ export function ScheduleView({ user, pgId }) {
                                 <p className="font-bold text-lg">{selectedBooking.booking.profiles?.phone || 'N/A'}</p>
                             </div>
                             <div className="flex justify-between items-center bg-yellow-200 border-2 border-black p-2 mt-2">
-                                <p className="font-black text-[10px] uppercase">Wash Score</p>
+                                <p className="font-black text-[10px] uppercase">Current Wash Score</p>
                                 <p className="font-black text-xl">{selectedBooking.booking.profiles?.wash_score ?? 100}</p>
                             </div>
+                            
+                            {/* SCORE PENALTY/REWARD BANNERS */}
+                            {selectedBooking.booking.status === 'expired' && (
+                                <div className="bg-red-500 border-2 border-black p-2 mt-2 text-center text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="font-black text-xs uppercase tracking-widest">Ghost Penalty Applied (-10)</p>
+                                </div>
+                            )}
+                            {selectedBooking.booking.status === 'completed' && (
+                                <div className="bg-green-400 border-2 border-black p-2 mt-2 text-center text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="font-black text-xs uppercase tracking-widest">Wash Completed (+2)</p>
+                                </div>
+                            )}
                         </div>
 
                         <button
@@ -340,7 +348,7 @@ export function ScheduleView({ user, pgId }) {
                             <button
                                 onClick={confirmCancelBooking}
                                 disabled={inserting}
-                                className="w-full border-4 border-black py-4 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50"
+                                className="w-full border-4 border-black py-4 bg-red-400 font-black hover:bg-red-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 text-white"
                             >
                                 {inserting ? 'DELETING...' : 'YES, DELETE IT'}
                             </button>
@@ -458,9 +466,10 @@ export function ScheduleView({ user, pgId }) {
                                 if (status === 'scheduled') bgColor = isOwnerBooking ? 'bg-purple-300' : 'bg-blue-300'
                                 if (status === 'active') bgColor = 'bg-yellow-300'
                                 if (status === 'completed') bgColor = 'bg-green-300'
+                                if (status === 'expired') bgColor = 'bg-red-300' // NEW: Expired styling
 
                                 borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                cursor = 'cursor-pointer' // Keep it pointer so users know they can click it for info!
+                                cursor = 'cursor-pointer'
                                 hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
                             }
 
@@ -483,7 +492,20 @@ export function ScheduleView({ user, pgId }) {
                                         {isPast && !isBooked && <span>(PAST)</span>}
 
                                         {isBooked && (
-                                            <div className="flex flex-1 justify-end items-center gap-2 pr-5 sm:pr-6 overflow-hidden">
+                                            <div className="flex flex-1 justify-end items-center gap-1 sm:gap-2 pr-5 sm:pr-6 overflow-hidden">
+                                                
+                                                {/* SCORE INDICATORS ON THE SCHEDULE BLOCKS */}
+                                                {booking.status === 'expired' && (
+                                                    <span className="bg-red-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Penalty">
+                                                        -10
+                                                    </span>
+                                                )}
+                                                {booking.status === 'completed' && (
+                                                    <span className="bg-green-600 text-white px-1 py-0.5 border-2 border-black tracking-wider text-[8px] sm:text-[9px] shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" title="Score Reward">
+                                                        +2
+                                                    </span>
+                                                )}
+
                                                 <span className="bg-white px-1 py-0.5 border-2 border-black tracking-wider uppercase text-[8px] sm:text-[9px] shrink-0">
                                                     {booking.status}
                                                 </span>
@@ -494,11 +516,10 @@ export function ScheduleView({ user, pgId }) {
                                             </div>
                                         )}
 
-                                        {/* STRICT CHECK: ONLY THE PERSON WHO BOOKED IT CAN DELETE IT */}
                                         {isBooked && booking.resident_id === user.id && booking.status === 'scheduled' && (
                                             <button
                                                 onClick={(e) => requestCancelBooking(e, booking.id)}
-                                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-red-400 hover:bg-red-500 border-2 border-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all text-[8px] sm:text-[10px]"
+                                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-red-400 hover:bg-red-500 border-2 border-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all text-[8px] sm:text-[10px] text-white"
                                                 title="Cancel Wash"
                                             >
                                                 ✕
@@ -512,8 +533,8 @@ export function ScheduleView({ user, pgId }) {
                 </div>
             </div>
 
-            {/* Legend */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+            {/* Legend - Updated with EXPIRED */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4">
                 <div className="border-4 border-dashed border-black py-2 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <p className="font-black text-[9px] sm:text-[10px] text-center">AVAILABLE</p>
                 </div>
@@ -525,6 +546,9 @@ export function ScheduleView({ user, pgId }) {
                 </div>
                 <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
+                </div>
+                <div className="border-4 border-black py-2 bg-red-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="font-black text-[9px] sm:text-[10px] text-center">EXPIRED</p>
                 </div>
                 <div className="border-4 border-black py-2 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-60">
                     <p className="font-black text-[9px] sm:text-[10px] text-center">PAST</p>

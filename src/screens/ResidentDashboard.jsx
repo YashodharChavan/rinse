@@ -5,6 +5,7 @@ import { ScheduleView } from '../components/ScheduleView'
 import { ProfileView } from '../components/ProfileView'
 import { WaitingApproval } from './WaitingApproval'
 import { PullToRefresh } from '../components/PullToRefresh'
+import { LeaderboardView } from '../components/LeaderboardView'
 
 export function ResidentDashboard() {
   const { user, signOut } = useAuth()
@@ -108,7 +109,7 @@ export function ResidentDashboard() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [activeTab])
 
-  
+
   const handleUpdateStatus = async (bookingId, newStatus) => {
     try {
       const { error } = await supabase.from('schedule').update({ status: newStatus }).eq('id', bookingId)
@@ -291,9 +292,15 @@ export function ResidentDashboard() {
         />
       </div>
 
+      <div className={activeTab === 'score' ? 'block' : 'hidden'}>
+        {userProfile?.pg_id && (
+          <LeaderboardView pgId={userProfile.pg_id} currentUserId={user.id} />
+        )}
+      </div>
+
       {/* Fixed Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 border-t-4 border-black bg-[#f4f0ea] z-50">
-        <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 grid grid-cols-3 gap-2">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 grid grid-cols-4 gap-2">
           <button
             onClick={() => setActiveTab('home')}
             className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'home'
@@ -321,7 +328,18 @@ export function ResidentDashboard() {
           >
             PROFILE
           </button>
+
+          <button
+            onClick={() => setActiveTab('score')}
+            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'score'
+              ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            RANK
+          </button>
         </div>
+
       </div>
     </div>
   )
