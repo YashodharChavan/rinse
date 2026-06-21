@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { PullToRefresh } from './PullToRefresh'
-import { PullToRefresh } from './PullToRefresh'
 
 export function LeaderboardView({ pgId, currentUserId }) {
   const [leaders, setLeaders] = useState([])
