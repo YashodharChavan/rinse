@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs>
+    <style>
+      .bg{fill:#fde047;}
+      .shadow{fill:#000;}
+      .letter{
+        font-family: "Arial Black","Fredoka","Baloo","Helvetica",sans-serif;
+        font-size:170px;
+        font-weight:900;
+        fill:#fff;
+        stroke:#000;
+        stroke-width:14;
+        stroke-linejoin:round;
+        paint-order:stroke fill;
+      }
+      .drop{
+        fill:#38bdf8;
+        stroke:#000;
+        stroke-width:10;
+        stroke-linejoin:round;
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="900"/>
+
+  <!-- Shadow -->
+  <g transform="translate(30,30) rotate(-27 600 450)">
+    <text x="180" y="620" class="shadow"
+      style="font-family:'Arial Black';font-size:170px;font-weight:900;">RINSE</text>
+  </g>
+
+  <!-- Water drops shadow -->
+  <g transform="translate(25,25)">
+    <path class="shadow" d="M175 610 C120 520 110 450 170 390 C225 460 245 535 175 610Z"/>
+    <path class="shadow" d="M955 210 C915 145 920 95 960 55 C1005 105 1008 165 955 210Z"/>
+    <path class="shadow" d="M1040 620 C980 555 980 500 1045 440 C1090 500 1100 570 1040 620Z"/>
+    <path class="shadow" d="M720 180 C685 135 690 95 720 60 C760 105 760 145 720 180Z"/>
+  </g>
+
+  <!-- Drops -->
+  <path class="drop" d="M175 610 C120 520 110 450 170 390 C225 460 245 535 175 610Z"/>
+  <path class="drop" d="M955 210 C915 145 920 95 960 55 C1005 105 1008 165 955 210Z"/>
+  <path class="drop" d="M1040 620 C980 555 980 500 1045 440 C1090 500 1100 570 1040 620Z"/>
+  <path class="drop" d="M720 180 C685 135 690 95 720 60 C760 105 760 145 720 180Z"/>
+
+  <ellipse class="drop" cx="305" cy="350" rx="28" ry="45" transform="rotate(-20 305 350)"/>
+  <ellipse class="drop" cx="905" cy="370" rx="24" ry="38" transform="rotate(18 905 370)"/>
+  <ellipse class="drop" cx="585" cy="690" rx="26" ry="40" transform="rotate(-30 585 690)"/>
+
+  <!-- Main word -->
+  <g transform="rotate(-27 600 450)">
+    <text x="180" y="620" class="letter">RINSE</text>
+  </g>
+</svg>

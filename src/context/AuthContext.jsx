@@ -42,7 +42,9 @@ export function AuthProvider({ children }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: Capacitor.isNativePlatform()
+            ? 'com.rinse.app://login-callback'
+            : window.location.origin,
         },
       })
       if (error) throw error

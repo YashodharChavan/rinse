@@ -7,6 +7,8 @@ import { Onboarding } from './screens/Onboarding'
 import { ResidentDashboard } from './screens/ResidentDashboard'
 import { OwnerDashboard } from './screens/OwnerDashboard'
 import { WaitingApproval } from './screens/WaitingApproval'
+import { App as CapacitorApp } from '@capacitor/app'
+
 function AppContent() {
   const { user, loading } = useAuth()
   const [profileData, setProfileData] = useState(null)
@@ -44,6 +46,33 @@ function AppContent() {
 
     fetchProfile()
   }, [user])
+
+  useEffect(() => {
+    // This listens for the custom URL opening the app
+    const setupDeepLinks = async () => {
+      CapacitorApp.addListener('appUrlOpen', (event) => {
+        // Example URL: com.rinse.app://login-callback#access_token=123...
+        const url = event.url;
+        
+        if (url.startsWith('com.rinse.app://')) {
+          // Pass the URL to Supabase so it can extract the access_token and log you in!
+          // We convert it to a standard URL string so Supabase can read the hash
+          const standardUrl = url.replace('com.rinse.app://login-callback', 'http://localhost');
+          
+          supabase.auth.getSessionFromUrl({ url: standardUrl }).then(({ data, error }) => {
+             if (error) console.error("Error setting session:", error);
+             // The user is now logged in! Supabase will trigger its normal auth state change.
+          });
+        }
+      });
+    };
+
+    setupDeepLinks();
+
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, []);
 
   // Show loading state
   if (loading || profileLoading) {

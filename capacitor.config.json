@@ -1,0 +1,6 @@
+{
+  "appId": "com.rinse.app",
+  "appName": "rinse",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
