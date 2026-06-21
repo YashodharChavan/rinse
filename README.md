@@ -2,10 +2,9 @@
 
 <br />
 
-<div style="font-size: 80px; margin-bottom: 20px;">
-   <img src="public/favicon.png" style="max-width: 100px">
+<div align="center">
+   <img src="public/favicon.png" width="100" alt="Rinse Logo" style="margin-bottom: 20px;">
 </div>
-
 
 
 # Rinse
@@ -27,16 +26,14 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 <br />
 
-<div style="display:flex; justify-content:center; gap:8px; width: 100%; height: 300px"> 
-
-   <img src="screenshots/resident home.png">
-   <img src="screenshots/schedule.png">
-   <img src="screenshots/rank.png">
+<div align="center">
+<img src="screenshots/resident home.png" width="32%" alt="Resident Home Dashboard">
+   &nbsp;
+   <img src="screenshots/schedule.png" width="32%" alt="Booking Schedule">
+   &nbsp;
+   <img src="screenshots/rank.png" width="32%" alt="Olympic Leaderboard">
 </div>
 
-</div>
-
----
 
 ## 🛑 The Problem
 
@@ -97,13 +94,13 @@ Thick borders, heavy offset shadows, and bright, unapologetic pastel colors. The
 
 ## 🏗️ Architecture & Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend Framework** | React (Vite) | Fast, concurrent rendering and state management |
-| **Styling** | Tailwind CSS | Utility-first classes for the Neo-Brutalist theme |
-| **Database & Auth** | Supabase (PostgreSQL) | Real-time database, user authentication, and RLS |
-| **Avatars** | DiceBear API | Dynamic, deterministic pixel-art avatar generation |
-| **Icons** | Lucide React | Lightweight, consistent iconography |
+| Layer                  | Technology            | Purpose                                            |
+| ---------------------- | --------------------- | -------------------------------------------------- |
+| **Frontend Framework** | React (Vite)          | Fast, concurrent rendering and state management    |
+| **Styling**            | Tailwind CSS          | Utility-first classes for the Neo-Brutalist theme  |
+| **Database & Auth**    | Supabase (PostgreSQL) | Real-time database, user authentication, and RLS   |
+| **Avatars**            | DiceBear API          | Dynamic, deterministic pixel-art avatar generation |
+| **Icons**              | Lucide React          | Lightweight, consistent iconography                |
 
 ---
 
