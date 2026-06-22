@@ -1,6 +1,6 @@
 {
   "appId": "com.rinse.app",
-  "appName": "rinse",
+  "appName": "Rinse",
   "webDir": "dist",
   "bundledWebRuntime": false
 }
