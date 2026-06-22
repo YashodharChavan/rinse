@@ -17,7 +17,7 @@
 
 [![License](https://img.shields.io/badge/License-MIT-c8f04d?style=for-the-badge)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-4d9ef0?style=for-the-badge)](https://github.com/YashodharChavan/rinse/pulls)
-[![Live Website](https://img.shields.io/badge/Live_Website-10B981?style=for-the-badge&logo=react&logoColor=white)](YOUR_WEBSITE_URL_HERE)
+[![Live Website](https://img.shields.io/badge/Live_Website-10B981?style=for-the-badge&logo=react&logoColor=white)](https://rinse-website.vercel.app)
 
 
 [![React](https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
