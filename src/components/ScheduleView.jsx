@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { PullToRefresh } from './PullToRefresh'
 import { createPortal } from 'react-dom'
+import { AlertPopup } from './AlertPopup'
 
 export function ScheduleView({ user, pgId }) {
     const [selectedDate, setSelectedDate] = useState(() => new Date())
@@ -12,6 +13,7 @@ export function ScheduleView({ user, pgId }) {
     const [currentTime, setCurrentTime] = useState(new Date())
     const [inserting, setInserting] = useState(false)
     const [error, setError] = useState(null)
+    const [alertMessage, setAlertMessage] = useState('')
 
     // Modals state
     const [bookingToDelete, setBookingToDelete] = useState(null)
@@ -140,7 +142,7 @@ export function ScheduleView({ user, pgId }) {
         if (checkDate > today) return false
 
         const currentMinute = (now.getHours() * 60) + now.getMinutes()
-        
+
         return (slot.startMinute + 5) <= currentMinute
     }
 
@@ -150,7 +152,7 @@ export function ScheduleView({ user, pgId }) {
         if (booking) {
             // Check if they are clicking a cancelled slot
             if (booking.status === 'cancelled') {
-                alert('This wash was cancelled by the owner due to machine maintenance. No points were deducted.')
+                setAlertMessage("This wash was cancelled by the owner due to machine maintenance. No points were deducted.")
                 return
             }
             // Otherwise, open the normal details modal
@@ -160,7 +162,7 @@ export function ScheduleView({ user, pgId }) {
 
         // Hard block to prevent booking empty slots when broken
         if (selectedMachine?.status === 'out_of_order') {
-            alert('This machine is out of order. You cannot schedule new washes.')
+            setAlertMessage("This machine is out of order. You cannot schedule new washes.")
             return
         }
 
@@ -193,10 +195,18 @@ export function ScheduleView({ user, pgId }) {
             await fetchBookings()
         } catch (err) {
             console.error('Error booking slot:', err)
-            alert('Failed to book slot.')
+            setAlertMessage("Failed to book slot.")
         } finally {
             setInserting(false)
         }
+    }
+
+    const handleFullRefresh = async () => {
+        // Fetch both the machines and the bookings simultaneously
+        await Promise.all([
+            fetchMachines(),
+            fetchBookings()
+        ])
     }
 
     const requestCancelBooking = (e, bookingId) => {
@@ -219,7 +229,7 @@ export function ScheduleView({ user, pgId }) {
             setBookingToDelete(null)
         } catch (err) {
             console.error('Error canceling booking:', err)
-            alert('Failed to cancel wash.')
+            setAlertMessage("Failed to cancel wash.")
         } finally {
             setInserting(false)
         }
@@ -280,8 +290,11 @@ export function ScheduleView({ user, pgId }) {
     }
 
     return (
-        <PullToRefresh onRefresh={fetchBookings}>
-
+        <PullToRefresh onRefresh={handleFullRefresh}>
+            <AlertPopup
+                message={alertMessage}
+                onClose={() => setAlertMessage('')}
+            />
             <div className="space-y-6 relative">
 
                 {/* BOOKING DETAILS MODAL */}
@@ -495,7 +508,7 @@ export function ScheduleView({ user, pgId }) {
                                     borderStyle = 'border-2 border-black opacity-60'
                                     cursor = 'cursor-not-allowed'
                                     hoverClass = ''
-                                } 
+                                }
                                 else if (selectedMachine?.status === 'out_of_order' && !isBooked) {
                                     // NEW: Make empty slots look dead if machine is broken
                                     bgColor = 'bg-gray-100'

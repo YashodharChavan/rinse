@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { PullToRefresh } from './PullToRefresh'
 import { supabase } from '../lib/supabaseClient'
 import { createPortal } from 'react-dom'
+import { AlertPopup } from './AlertPopup'
+
 
 export function ManageResidents({ pgId, ownerId }) {
   const [residents, setResidents] = useState([])
@@ -11,6 +13,7 @@ export function ManageResidents({ pgId, ownerId }) {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [requests, setRequests] = useState([])
+  const [alertMessage, setAlertMessage] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -51,7 +54,7 @@ export function ManageResidents({ pgId, ownerId }) {
 
     } catch (error) {
       console.error('Error fetching data:', error)
-      alert('Failed to fetch data')
+      setAlertMessage("Failed to fetch data")
     } finally {
       setLoading(false)
     }
@@ -171,6 +174,7 @@ export function ManageResidents({ pgId, ownerId }) {
 
   return (
     <PullToRefresh onRefresh={fetchData}>
+      <AlertPopup message={alertMessage} onClose={() => setAlertMessage("")} />
 
       <div className="space-y-6 relative">
 

@@ -6,6 +6,7 @@ import { ProfileView } from '../components/ProfileView'
 import { WaitingApproval } from './WaitingApproval'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
+import { AlertPopup } from '../components/AlertPopup'
 
 export function ResidentDashboard() {
   const { user, signOut } = useAuth()
@@ -16,7 +17,7 @@ export function ResidentDashboard() {
   const [loadingBookings, setLoadingBookings] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [hasFetched, setHasFetched] = useState(false)
-
+  const [alertMessage, setAlertMessage] = useState("")
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
@@ -126,7 +127,7 @@ export function ResidentDashboard() {
       await fetchMyBookings()
     } catch (err) {
       console.error(`Error updating to ${newStatus}:`, err)
-      alert('Failed to update status.')
+      setAlertMessage("Failed to update status.")
     }
   }
 
@@ -138,7 +139,7 @@ export function ResidentDashboard() {
       await fetchMyBookings()
     } catch (err) {
       console.error('Error canceling booking:', err)
-      alert('Failed to cancel booking.')
+      setAlertMessage("Failed to cancel booking.")
     }
   }
 
@@ -157,7 +158,7 @@ export function ResidentDashboard() {
 
     return (
       <PullToRefresh onRefresh={fetchMyBookings}>
-
+        <AlertPopup message={alertMessage} onClose={()=>setAlertMessage("")} />
         <div className="p-2 sm:p-2">
           <div className="max-w-2xl mx-auto">
             <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-8 text-center">

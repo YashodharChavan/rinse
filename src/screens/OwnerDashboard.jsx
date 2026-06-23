@@ -6,6 +6,7 @@ import { ManageResidents } from '../components/ManageResidents'
 import { ScheduleView } from '../components/ScheduleView'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
+import { AlertPopup } from '../components/AlertPopup'
 
 export function OwnerDashboard() {
   const { user, signOut } = useAuth()
@@ -35,6 +36,9 @@ export function OwnerDashboard() {
   const [loadingBookings, setLoadingBookings] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [hasFetched, setHasFetched] = useState(false)
+
+  // For Alert Popup
+  const [alertMessage, setAlertMessage] = useState('')
 
   // Keep time ticking every minute
   useEffect(() => {
@@ -107,7 +111,7 @@ export function OwnerDashboard() {
       setIsEditingProfile(false)
     } catch (err) {
       console.error('Error updating profile:', err)
-      alert('Failed to update profile details.')
+      setAlertMessage("Failed to update profile details.")
     } finally {
       setUpdatingProfile(false)
     }
@@ -135,7 +139,7 @@ export function OwnerDashboard() {
       setIsEditingPG(false)
     } catch (err) {
       console.error('Error updating PG details:', err)
-      alert('Failed to update PG details.')
+      setAlertMessage("Failed to update PG details.")
     } finally {
       setUpdatingPG(false)
     }
@@ -221,7 +225,7 @@ export function OwnerDashboard() {
       await fetchMyBookings()
     } catch (err) {
       console.error(`Error updating to ${newStatus}:`, err)
-      alert('Failed to update status.')
+      setAlertMessage("Failed to update status.")
     }
   }
 
@@ -233,7 +237,7 @@ export function OwnerDashboard() {
       await fetchMyBookings()
     } catch (err) {
       console.error('Error canceling booking:', err)
-      alert('Failed to cancel booking.')
+      setAlertMessage("Failed to cancel booking.")
     }
   }
 
@@ -254,6 +258,7 @@ export function OwnerDashboard() {
 
     return (
       <PullToRefresh onRefresh={fetchMyBookings}>
+        <AlertPopup message={alertMessage} onClose={() => setAlertMessage('')} />
         <div className="space-y-6 p-2 sm:p-4 min-h-screen">
 
           <div className="border-4 border-black p-6 bg-blue-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
