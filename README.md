@@ -32,8 +32,6 @@
 &nbsp;
 <img src="screenshots/rank.png" width="32%" alt="Olympic Leaderboard">
 
-## NOTE: 
-due to latest database changes the current application is unstable and will be stable till tonight after latest release. Apologies for inconvience 
 </div>
 
 ## 🛑 The Problem
@@ -110,38 +108,52 @@ Thick borders, heavy offset shadows, and bright, unapologetic pastel colors. The
 Rinse relies on a clean, relational PostgreSQL schema managed via Supabase.
 
 ### 1. `pgs` (Buildings)
+
 Stores the physical properties.
-- `id` (UUID, Primary Key)
-- `name` (Text) - Name of the PG
-- `address` (Text)
-- `invite_code` (Text) - Unique code for residents to join
+
+* `id` (UUID, Primary Key)
+* `name` (Text) - Name of the PG
+* `address` (Text)
+* `invite_code` (Text) - Unique code for residents to join
 
 ### 2. `profiles` (Users)
+
 Linked to Supabase Auth.
-- `id` (UUID, Primary Key)
-- `pg_id` (UUID, Foreign Key -> `pgs.id`)
-- `full_name` (Text)
-- `phone` (Text)
-- `role` (Enum: `'owner'`, `'resident'`)
-- `wash_score` (Integer) - Defaults to `100`
-- `is_approved` (Boolean) - Requires owner approval to access the schedule
+
+* `id` (UUID, Primary Key)
+* `pg_id` (UUID, Foreign Key -> `pgs.id`)
+* `full_name` (Text)
+* `phone` (Text)
+* `role` (Enum: `'owner'`, `'resident'`)
+* `wash_score` (Integer) - Defaults to `100`. Used for the gamified penalty system.
+* `is_approved` (Boolean) - Requires owner approval to access the schedule
 
 ### 3. `machines`
+
 The physical washing machines in a PG.
-- `id` (UUID, Primary Key)
-- `pg_id` (UUID, Foreign Key -> `pgs.id`)
-- `machine_number` (Integer)
-- `cycle_duration` (Integer) - E.g., 30, 45, or 60 minutes
+
+* `id` (UUID, Primary Key)
+* `pg_id` (UUID, Foreign Key -> `pgs.id`)
+* `machine_number` (Text/Integer)
+* `cycle_duration` (Integer) - E.g., 30, 45, or 60 minutes
+* `status` (Text/Enum) - `'free'`, `'occupied'`, or `'out_of_order'`
+* `maintenance_eta` (Text) - Stores the owner's custom ETA message when a machine breaks down (e.g., "Expected Fix: 2 hours").
 
 ### 4. `schedule` (Bookings)
-The core ledger for all wash cycles.
-- `id` (UUID, Primary Key)
-- `machine_id` (UUID, Foreign Key -> `machines.id`)
-- `resident_id` (UUID, Foreign Key -> `profiles.id`)
-- `start_time` (Timestamp)
-- `end_time` (Timestamp)
-- `status` (Enum: `'scheduled'`, `'active'`, `'completed'`, `'incomplete'`)
 
+The core ledger for all wash cycles.
+
+* `id` (UUID, Primary Key)
+* `machine_id` (UUID, Foreign Key -> `machines.id`)
+* `resident_id` (UUID, Foreign Key -> `profiles.id`)
+* `start_time` (Timestamp)
+* `end_time` (Timestamp)
+* `status` (Text/Enum) - Tracks the exact state of a wash block:
+  * `'scheduled'`: Standard upcoming wash.
+  * `'active'`: Currently running wash.
+  * `'completed'`: Successfully finished wash (+2 points).
+  * `'expired'`: A ghost booking penalty where the user didn't show up (-10 points).
+  * `'cancelled'`: Wiped by the system due to machine maintenance (No penalty).
 ### 🗺️ Visual Architecture
 
 ```mermaid
@@ -171,8 +183,10 @@ erDiagram
     MACHINES {
         uuid id PK
         uuid pg_id FK
-        int machine_number
+        text machine_number
         int cycle_duration
+        enum status
+        text maintenance_eta
     }
     
     SCHEDULE {
