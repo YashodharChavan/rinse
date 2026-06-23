@@ -140,15 +140,27 @@ export function ScheduleView({ user, pgId }) {
         if (checkDate > today) return false
 
         const currentMinute = (now.getHours() * 60) + now.getMinutes()
-        // NOTE ONLY FOR DEBUG I DID 15
-        return (slot.startMinute + 15) <= currentMinute
+        
+        return (slot.startMinute + 5) <= currentMinute
     }
 
     const handleSlotClick = async (slot) => {
         const booking = getBookingForSlot(slot)
 
         if (booking) {
+            // Check if they are clicking a cancelled slot
+            if (booking.status === 'cancelled') {
+                alert('This wash was cancelled by the owner due to machine maintenance. No points were deducted.')
+                return
+            }
+            // Otherwise, open the normal details modal
             setSelectedBooking({ booking, slot })
+            return
+        }
+
+        // Hard block to prevent booking empty slots when broken
+        if (selectedMachine?.status === 'out_of_order') {
+            alert('This machine is out of order. You cannot schedule new washes.')
             return
         }
 
@@ -270,7 +282,7 @@ export function ScheduleView({ user, pgId }) {
     return (
         <PullToRefresh onRefresh={fetchBookings}>
 
-            <div className="space-y-6 relative p-2 sm:p-2">
+            <div className="space-y-6 relative">
 
                 {/* BOOKING DETAILS MODAL */}
                 {selectedBooking && createPortal(
@@ -330,7 +342,7 @@ export function ScheduleView({ user, pgId }) {
                                 CLOSE DETAILS
                             </button>
                         </div>
-                    </div>, 
+                    </div>,
                     document.body
                 )}
 
@@ -365,7 +377,7 @@ export function ScheduleView({ user, pgId }) {
                 )}
 
                 {/* Header */}
-                <div className="sticky top-0 z-50 border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <div className="sticky top-0 z-[100] border-4 border-black p-3 sm:p-4 bg-blue-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                     <div className="flex justify-between items-center gap-2 mb-3">
                         <h2 className="text-xl sm:text-2xl font-black tracking-tight m-0 leading-none">
                             SCHEDULE
@@ -404,7 +416,24 @@ export function ScheduleView({ user, pgId }) {
                             NEXT →
                         </button>
                     </div>
+
+                    {selectedMachine?.status === 'out_of_order' && (
+                        <div className="border-4 border-black bg-red-500 p-2 sm:p-3 mt-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center text-center">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl sm:text-2xl leading-none">🚧</span>
+                                <span className="font-black text-lg sm:text-xl text-white uppercase tracking-widest leading-none">OUT OF ORDER</span>
+                            </div>
+                            <div className="bg-white border-2 border-black px-2 py-1 w-full max-w-sm">
+                                <p className="font-black text-[9px] text-gray-500 uppercase tracking-widest leading-none mb-1">Owner Update</p>
+                                <p className="font-bold text-xs sm:text-sm text-black uppercase leading-tight">
+                                    {selectedMachine.maintenance_eta || "Maintenance in progress. Please check back later."}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
+
+
 
                 {error && (
                     <div className="border-4 border-black p-4 bg-red-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -414,7 +443,6 @@ export function ScheduleView({ user, pgId }) {
 
                 {/* Calendar Grid */}
                 <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex overflow-hidden relative">
-
                     <div className="w-14 sm:w-16 bg-gray-100 shrink-0">
                         {Array.from({ length: 24 }).map((_, hour) => (
                             <div
@@ -467,7 +495,15 @@ export function ScheduleView({ user, pgId }) {
                                     borderStyle = 'border-2 border-black opacity-60'
                                     cursor = 'cursor-not-allowed'
                                     hoverClass = ''
-                                } else if (isBooked) {
+                                } 
+                                else if (selectedMachine?.status === 'out_of_order' && !isBooked) {
+                                    // NEW: Make empty slots look dead if machine is broken
+                                    bgColor = 'bg-gray-100'
+                                    borderStyle = 'border-4 border-dashed border-gray-400'
+                                    cursor = 'cursor-not-allowed'
+                                    hoverClass = ''
+                                }
+                                else if (isBooked) {
                                     const status = booking.status || 'scheduled'
 
                                     if (status === 'scheduled') bgColor = isOwnerBooking ? 'bg-purple-300' : 'bg-blue-300'
@@ -475,9 +511,15 @@ export function ScheduleView({ user, pgId }) {
                                     if (status === 'completed') bgColor = 'bg-green-300'
                                     if (status === 'expired') bgColor = 'bg-red-300' // NEW: Expired styling
 
-                                    borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                    cursor = 'cursor-pointer'
-                                    hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
+                                    if (status === 'cancelled') {
+                                        bgColor = 'bg-gray-400'
+                                        borderStyle = 'border-4 border-black'
+                                        cursor = 'cursor-not-allowed'
+                                    } else {
+                                        borderStyle = 'border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+                                        cursor = 'cursor-pointer'
+                                        hoverClass = 'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all'
+                                    }
                                 }
 
                                 return (
@@ -553,6 +595,9 @@ export function ScheduleView({ user, pgId }) {
                     </div>
                     <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
+                    </div>
+                    <div className="border-4 border-black py-2 bg-gray-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">CANCELLED</p>
                     </div>
                     <div className="border-4 border-black py-2 bg-red-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         <p className="font-black text-[9px] sm:text-[10px] text-center">EXPIRED</p>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
+import { AlertPopup } from './AlertPopup'
 import { supabase } from '../lib/supabaseClient'
 
 export function MachineManager({ pgId }) {
@@ -15,6 +16,11 @@ export function MachineManager({ pgId }) {
 
   // Modals state
   const [machineToDelete, setMachineToDelete] = useState(null)
+  const [alertMessage, setAlertMessage] = useState('')
+  
+  // Maintenance State
+  const [maintenanceModal, setMaintenanceModal] = useState(null)
+  const [maintenanceEta, setMaintenanceEta] = useState('')
 
   // Fetch machines on component mount or when pgId changes
   useEffect(() => {
@@ -49,7 +55,7 @@ export function MachineManager({ pgId }) {
     e.preventDefault()
 
     if (!machineNumber.trim() || !cycleDuration.trim()) {
-      alert('Please fill in all fields.')
+      setAlertMessage('Please fill in all fields.')
       return
     }
 
@@ -70,22 +76,19 @@ export function MachineManager({ pgId }) {
 
       if (insertError) throw insertError
 
-      // Add new machine to state
       setMachines((prev) => [...prev, data[0]].sort((a, b) => parseInt(a.machine_number) - parseInt(b.machine_number)))
 
-      // Reset form
       setMachineNumber('')
       setCycleDuration('')
     } catch (err) {
       console.error('Error adding machine:', err)
-      alert('Failed to add machine.')
+      setAlertMessage('Failed to add machine.')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleDeleteMachine = (machineId) => {
-    // Just open the modal, don't delete yet
     setMachineToDelete(machineId)
   }
 
@@ -93,7 +96,7 @@ export function MachineManager({ pgId }) {
     if (!machineToDelete) return
 
     try {
-      setSubmitting(true) // Re-use submitting state for loading UI
+      setSubmitting(true) 
       const { error: deleteError } = await supabase
         .from('machines')
         .delete()
@@ -102,39 +105,89 @@ export function MachineManager({ pgId }) {
       if (deleteError) throw deleteError
 
       setMachines((prev) => prev.filter((m) => m.id !== machineToDelete))
-      setMachineToDelete(null) // Close the modal
+      setMachineToDelete(null) 
     } catch (err) {
       console.error('Error deleting machine:', err)
-      alert('Failed to delete machine.')
+      setAlertMessage('Failed to delete machine.')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleToggleStatus = async (machineId, currentStatus) => {
-    // 1. Hard block: If it's occupied, do absolutely nothing.
     if (currentStatus === 'occupied') {
-      alert('This machine is currently running a wash cycle. You cannot put it in maintenance right now.')
+      setAlertMessage('This machine is currently running a wash cycle. You cannot put it in maintenance right now.')
       return
     }
 
-    // 2. Binary toggle: Only flip between 'free' and 'out_of_order'
     const nextStatus = currentStatus === 'free' ? 'out_of_order' : 'free'
+
+    if (nextStatus === 'out_of_order') {
+      setMaintenanceEta('') // Reset time input
+      setMaintenanceModal({ machineId })
+      return
+    }
 
     try {
       const { error: updateError } = await supabase
         .from('machines')
-        .update({ status: nextStatus })
+        .update({
+          status: nextStatus,
+          maintenance_eta: null
+        })
         .eq('id', machineId)
 
       if (updateError) throw updateError
 
       setMachines((prev) =>
-        prev.map((m) => (m.id === machineId ? { ...m, status: nextStatus } : m))
+        prev.map((m) => (m.id === machineId ? { ...m, status: nextStatus, maintenance_eta: null } : m))
       )
     } catch (err) {
       console.error('Error updating machine status:', err)
-      alert('Failed to update machine status.')
+      setAlertMessage('Failed to update machine status.')
+    }
+  }
+
+  // Helper to format the relative time string
+  const formatEta = (timeString) => {
+    if (!timeString || !timeString.trim()) {
+      return 'Maintenance in progress. Check back later.'
+    }
+    return `Expected Fix: ${timeString.trim()}`
+  }
+
+  const confirmBreakdown = async () => {
+    if (!maintenanceModal) return
+
+    const formattedMessage = formatEta(maintenanceEta)
+
+    try {
+      setSubmitting(true)
+
+      const { error: updateError } = await supabase
+        .from('machines')
+        .update({
+          status: 'out_of_order',
+          maintenance_eta: formattedMessage
+        })
+        .eq('id', maintenanceModal.machineId)
+
+      if (updateError) throw updateError
+
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === maintenanceModal.machineId
+            ? { ...m, status: 'out_of_order', maintenance_eta: formattedMessage }
+            : m
+        )
+      )
+      setMaintenanceModal(null)
+      setMaintenanceEta('')
+    } catch (err) {
+      console.error('Error updating machine status:', err)
+      setAlertMessage('Failed to update machine status.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -170,6 +223,7 @@ export function MachineManager({ pgId }) {
 
   return (
     <>
+      <AlertPopup message={alertMessage} onClose={() => setAlertMessage('')} />
 
       {/* DELETE MACHINE MODAL */}
       {machineToDelete && createPortal(
@@ -195,6 +249,58 @@ export function MachineManager({ pgId }) {
                 className="w-full border-4 border-black py-4 bg-black font-black hover:bg-gray-800 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50 text-white"
               >
                 {submitting ? 'DELETING...' : 'YES, DESTROY IT'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MAINTENANCE ETA MODAL */}
+      {maintenanceModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm mb-0">
+          <div className="border-4 border-black p-6 sm:p-8 bg-red-500 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-md w-full">
+            <div className="text-5xl mb-2 text-center">🚧</div>
+            <h3 className="text-3xl font-black mb-4 uppercase tracking-tight text-white text-center">REPORT BREAKDOWN</h3>
+
+            {/* Warning Box */}
+            <div className="bg-white border-4 border-black p-3 mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-sm text-black leading-snug">
+                ⚠️ <span className="font-black text-red-600 uppercase">Warning:</span> Marking this machine as Out of Order will instantly cancel all future scheduled washes for it.
+              </p>
+            </div>
+
+            <label className="block font-black mb-2 text-[10px] sm:text-xs tracking-tight uppercase text-white">
+              How much time until it's fixed?
+            </label>
+            <input
+              type="text"
+              value={maintenanceEta}
+              onChange={(e) => setMaintenanceEta(e.target.value)}
+              placeholder="e.g., 2 hours, 1 day, etc."
+              className="w-full border-4 border-black p-3 mb-6 font-black text-sm sm:text-base bg-white focus:outline-none focus:ring-2 focus:ring-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+              autoFocus
+            />
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  setMaintenanceModal(null)
+                  setMaintenanceEta('')
+                }}
+                disabled={submitting}
+                className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-base disabled:opacity-50"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={confirmBreakdown}
+                disabled={submitting}
+                className="w-full border-4 border-black py-4 bg-black font-black hover:bg-gray-800 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-base disabled:opacity-50 text-white"
+              >
+                {submitting ? 'CONFIRMING...' : 'CONFIRM BREAKDOWN'}
               </button>
             </div>
           </div>
@@ -285,10 +391,10 @@ export function MachineManager({ pgId }) {
                       onClick={() => handleToggleStatus(machine.id, machine.status)}
                       disabled={machine.status === 'occupied'}
                       className={`flex-1 border-4 border-black p-2 font-black text-[10px] sm:text-xs transition-all ${machine.status === 'occupied'
-                          // LOCKED STATE: Flat, gray, unclickable
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none translate-x-1 translate-y-1'
-                          // ACTIVE STATE: Standard neo-brutalist blue
-                          : 'bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none'
+                        // LOCKED STATE: Flat, gray, unclickable
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none translate-x-1 translate-y-1'
+                        // ACTIVE STATE: Standard neo-brutalist blue
+                        : 'bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none'
                         }`}
                     >
                       {machine.status === 'occupied' ? '🔒 LOCKED (IN USE)' : 'TOGGLE USABILITY'}
