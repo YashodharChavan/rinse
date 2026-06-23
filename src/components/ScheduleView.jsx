@@ -100,7 +100,7 @@ export function ScheduleView({ user, pgId }) {
         const slotDuration = cycleDuration + bufferTime
         let currentMinute = 0
 
-        while (currentMinute < 1440) {
+        while (currentMinute + cycleDuration <= 1440) {
             const startMinute = currentMinute
             const endMinute = currentMinute + cycleDuration
 
@@ -140,7 +140,8 @@ export function ScheduleView({ user, pgId }) {
         if (checkDate > today) return false
 
         const currentMinute = (now.getHours() * 60) + now.getMinutes()
-        return (slot.startMinute + 5) <= currentMinute
+        // NOTE ONLY FOR DEBUG I DID 15
+        return (slot.startMinute + 15) <= currentMinute
     }
 
     const handleSlotClick = async (slot) => {

@@ -313,7 +313,8 @@ export function OwnerDashboard() {
             <div className="space-y-6 mb-8">
               {nextBookingsPerMachine.map((booking) => {
                 const startTime = new Date(booking.start_time)
-                const fiveMinsBefore = new Date(startTime.getTime() - 5 * 60000)
+                // NOTE MAKING DEBUG CHANGES SHOULD BE REVERTED
+                const fiveMinsBefore = new Date(startTime.getTime() - 15 * 60000)
                 const isTimeToStart = currentTime >= fiveMinsBefore
 
                 return (

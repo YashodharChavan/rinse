@@ -32,6 +32,8 @@
 &nbsp;
 <img src="screenshots/rank.png" width="32%" alt="Olympic Leaderboard">
 
+## NOTE: 
+due to latest database changes the current application is unstable and will be stable till tonight after latest release. Apologies for inconvience 
 </div>
 
 ## 🛑 The Problem

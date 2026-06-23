@@ -11,7 +11,6 @@ export function MachineManager({ pgId }) {
   // Form state
   const [machineNumber, setMachineNumber] = useState('')
   const [cycleDuration, setCycleDuration] = useState('')
-  const [detergentType, setDetergentType] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Modals state
@@ -49,7 +48,7 @@ export function MachineManager({ pgId }) {
   const handleAddMachine = async (e) => {
     e.preventDefault()
 
-    if (!machineNumber.trim() || !cycleDuration.trim() || !detergentType.trim()) {
+    if (!machineNumber.trim() || !cycleDuration.trim()) {
       alert('Please fill in all fields.')
       return
     }
@@ -64,7 +63,6 @@ export function MachineManager({ pgId }) {
             pg_id: pgId,
             machine_number: machineNumber.trim(),
             cycle_duration: parseInt(cycleDuration, 10),
-            detergent_type: detergentType.trim(),
             status: 'free'
           }
         ])
@@ -78,7 +76,6 @@ export function MachineManager({ pgId }) {
       // Reset form
       setMachineNumber('')
       setCycleDuration('')
-      setDetergentType('')
     } catch (err) {
       console.error('Error adding machine:', err)
       alert('Failed to add machine.')
@@ -115,9 +112,14 @@ export function MachineManager({ pgId }) {
   }
 
   const handleToggleStatus = async (machineId, currentStatus) => {
-    const statuses = ['free', 'occupied', 'out_of_order']
-    const currentIndex = statuses.indexOf(currentStatus)
-    const nextStatus = statuses[(currentIndex + 1) % statuses.length]
+    // 1. Hard block: If it's occupied, do absolutely nothing.
+    if (currentStatus === 'occupied') {
+      alert('This machine is currently running a wash cycle. You cannot put it in maintenance right now.')
+      return
+    }
+
+    // 2. Binary toggle: Only flip between 'free' and 'out_of_order'
+    const nextStatus = currentStatus === 'free' ? 'out_of_order' : 'free'
 
     try {
       const { error: updateError } = await supabase
@@ -221,7 +223,7 @@ export function MachineManager({ pgId }) {
                 />
               </div>
 
-              {/* Side-by-Side Grid for mobile (Cycle & Detergent) */}
+              {/* Side-by-Side Grid for mobile (Cycle) */}
               <div className="w-full sm:w-2/3 grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-black mb-1 text-[10px] sm:text-xs tracking-tight uppercase">Cycle (mins)</label>
@@ -231,17 +233,6 @@ export function MachineManager({ pgId }) {
                     onChange={(e) => setCycleDuration(e.target.value)}
                     placeholder="45"
                     min="1"
-                    className="w-full border-4 border-black p-2 font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-black mb-1 text-[10px] sm:text-xs tracking-tight uppercase">Detergent</label>
-                  <input
-                    type="text"
-                    value={detergentType}
-                    onChange={(e) => setDetergentType(e.target.value)}
-                    placeholder="Liquid/Powder"
                     className="w-full border-4 border-black p-2 font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
                   />
                 </div>
@@ -285,7 +276,6 @@ export function MachineManager({ pgId }) {
                     <h3 className="text-xl sm:text-2xl font-black mb-2 tracking-tight">{machine.machine_number}</h3>
                     <div className="space-y-1 font-bold text-xs sm:text-sm">
                       <p>⏱️ Cycle: {machine.cycle_duration} mins</p>
-                      <p>🧼 Detergent: {machine.detergent_type}</p>
                       <p className="pt-2 text-base font-black">{getStatusLabel(machine.status)}</p>
                     </div>
                   </div>
@@ -293,9 +283,15 @@ export function MachineManager({ pgId }) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleToggleStatus(machine.id, machine.status)}
-                      className="flex-1 border-4 border-black p-2 bg-blue-300 font-black text-[10px] sm:text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+                      disabled={machine.status === 'occupied'}
+                      className={`flex-1 border-4 border-black p-2 font-black text-[10px] sm:text-xs transition-all ${machine.status === 'occupied'
+                          // LOCKED STATE: Flat, gray, unclickable
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none translate-x-1 translate-y-1'
+                          // ACTIVE STATE: Standard neo-brutalist blue
+                          : 'bg-blue-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-blue-400 active:translate-y-1 active:translate-x-1 active:shadow-none'
+                        }`}
                     >
-                      STATUS
+                      {machine.status === 'occupied' ? '🔒 LOCKED (IN USE)' : 'TOGGLE USABILITY'}
                     </button>
                     <button
                       onClick={() => handleDeleteMachine(machine.id)}
