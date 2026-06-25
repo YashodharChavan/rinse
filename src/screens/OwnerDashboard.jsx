@@ -7,6 +7,7 @@ import { ScheduleView } from '../components/ScheduleView'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
 import { AlertPopup } from '../components/AlertPopup'
+import { QRPosterModal } from '../components/QRPosterModal'
 
 export function OwnerDashboard() {
   const { user, signOut } = useAuth()
@@ -40,6 +41,8 @@ export function OwnerDashboard() {
   // For Alert Popup
   const [alertMessage, setAlertMessage] = useState('')
 
+  // For QR Poster Modal
+  const [showQRModal, setShowQRModal] = useState(false)
   // Keep time ticking every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
@@ -262,16 +265,29 @@ export function OwnerDashboard() {
         <div className="space-y-6 p-2 sm:p-4 min-h-screen">
 
           <div className="border-4 border-black p-6 bg-blue-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-black mb-2 tracking-tight uppercase truncate">
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              <h2 className="text-2xl font-black tracking-tight uppercase truncate leading-none m-0">
                 {pgDetails?.name || 'YOUR PG'}
               </h2>
-              <p className="font-bold text-sm sm:text-base mb-2">📍 {pgDetails?.address || 'Address not set'}</p>
-              <p className="flex flex-wrap items-center gap-2 font-bold text-sm sm:text-base">
-                🔗 Invite Code:
-                <span className="bg-white px-2 py-1 border-2 border-black tracking-widest">{pgDetails?.invite_code || '---'}</span>
+
+              <p className="font-bold text-sm sm:text-base text-gray-800 uppercase tracking-tight m-0">
+                {pgDetails?.address || 'ADDRESS NOT SET'}
               </p>
+
+              <div className="flex flex-wrap items-center gap-3 mt-1">
+                <span className="font-black text-sm sm:text-base uppercase">INVITE CODE:</span>
+                <span className="bg-white px-2 py-1 border-2 border-black font-black tracking-widest text-sm sm:text-base">
+                  {pgDetails?.invite_code || '---'}
+                </span>
+                <button
+                  onClick={() => setShowQRModal(true)}
+                  className="bg-purple-300 border-2 border-black px-4 py-1.5 font-black text-xs sm:text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-purple-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase tracking-wider transition-all"
+                >
+                  GET POSTER
+                </button>
+              </div>
             </div>
+
             <button
               onClick={signOut}
               className="w-full sm:w-auto border-4 border-black p-3 bg-red-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all text-sm sm:text-base shrink-0"
@@ -283,7 +299,7 @@ export function OwnerDashboard() {
           <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-center relative overflow-hidden">
 
             <div className={`absolute top-4 right-4 border-4 border-black p-1 sm:p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${parseInt(userProfile?.wash_score ?? 100) >= 80 ? 'bg-green-300' :
-                parseInt(userProfile?.wash_score ?? 100) >= 50 ? 'bg-yellow-300' : 'bg-red-400'
+              parseInt(userProfile?.wash_score ?? 100) >= 50 ? 'bg-yellow-300' : 'bg-red-400'
               }`}>
               <p className="font-black text-[8px] sm:text-[10px] uppercase leading-none mb-1 text-black">Wash Score</p>
               <div className="flex items-center justify-center gap-1">
@@ -603,8 +619,8 @@ export function OwnerDashboard() {
           <button
             onClick={() => setActiveTab('home')}
             className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'home'
-                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             HOME
@@ -612,8 +628,8 @@ export function OwnerDashboard() {
           <button
             onClick={() => setActiveTab('schedule')}
             className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'schedule'
-                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             SCHEDULE
@@ -621,8 +637,8 @@ export function OwnerDashboard() {
           <button
             onClick={() => setActiveTab('residents')}
             className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'residents'
-                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             PEOPLE
@@ -630,8 +646,8 @@ export function OwnerDashboard() {
           <button
             onClick={() => setActiveTab('settings')}
             className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'settings'
-                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             SETTINGS
@@ -639,14 +655,21 @@ export function OwnerDashboard() {
           <button
             onClick={() => setActiveTab('score')}
             className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'score'
-                ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-                : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             RANK
           </button>
         </div>
       </div>
+      {showQRModal && (
+        <QRPosterModal
+          pgDetails={pgDetails}
+          userProfile={userProfile}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
     </div>
   )
 }
