@@ -51,7 +51,7 @@ export function Onboarding() {
       const { data: pgData, error: pgError } = await supabase
         .from('pgs')
         .select('id')
-        .eq('invite_code', inviteCode.toUpperCase())
+        .ilike('invite_code', inviteCode.toUpperCase())
         .single()
 
       if (pgError || !pgData) {
