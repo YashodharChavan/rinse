@@ -43,6 +43,10 @@ export function OwnerDashboard() {
 
   // For QR Poster Modal
   const [showQRModal, setShowQRModal] = useState(false)
+
+  // NEW: State for the stats
+  const [pgStats, setPgStats] = useState({ residents: 0, machines: 0 })
+
   // Keep time ticking every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
@@ -84,7 +88,22 @@ export function OwnerDashboard() {
 
       if (pgError) throw pgError
       if (pgData) setPgDetails(pgData)
+      const { count: machineCount } = await supabase
+        .from('machines')
+        .select('*', { count: 'exact', head: true })
+        .eq('pg_id', profileData.pg_id)
 
+      const { count: residentCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('pg_id', profileData.pg_id)
+        .eq('role', 'resident')
+        .eq('is_approved', true) // Optional: only count approved residents
+
+      setPgStats({
+        machines: machineCount || 0,
+        residents: residentCount || 0
+      })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
@@ -310,7 +329,20 @@ export function OwnerDashboard() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2 pr-12">WASH STATS</h1>
-            <p className="font-bold text-sm sm:text-base pr-12">👑 Welcome, {userProfile?.full_name?.split(' ')[0] || 'Owner'}!</p>
+            <p className="font-bold text-md sm:text-md pr-12 mb-6">Welcome, {userProfile?.full_name?.split(' ')[0] || 'Owner'}!</p>
+
+            {/* --- NEW: DYNAMIC STATS DISPLAY --- */}
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div className="bg-white border-4 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1">
+                <p className="text-3xl font-black">{pgStats.residents}</p>
+                <p className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-gray-700">Residents</p>
+              </div>
+              <div className="bg-white border-4 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1">
+                <p className="text-3xl font-black">{pgStats.machines}</p>
+                <p className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-gray-700">Machines</p>
+              </div>
+            </div>
+
           </div>
 
           <h2 className="text-2xl font-black mb-4 tracking-tight">YOUR UPCOMING WASHES</h2>

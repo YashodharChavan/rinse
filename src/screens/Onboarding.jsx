@@ -132,6 +132,7 @@ export function Onboarding() {
 
       if (pgError) throw pgError
 
+      // STEP 3: Link the new PG ID back to the owner's profile
       const { error: profileError2 } = await supabase
         .from('profiles')
         .update({
@@ -142,6 +143,12 @@ export function Onboarding() {
       if (profileError2) throw profileError2
 
       setSuccess(true)
+
+      // NEW: Wait 1.5 seconds so they can read the success message, then force a state refresh
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+
     } catch (err) {
       console.error('Error creating PG:', err)
       setError(err.message || 'Failed to create PG. Please try again.')
