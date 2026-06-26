@@ -40,8 +40,8 @@ CREATE TABLE schedule (
     resident_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    status TEXT CHECK (status IN ('scheduled', 'active', 'completed', 'incomplete')) DEFAULT 'scheduled' NOT NULL
-    -- NEW: 'incomplete' status added for the Lazy Sweeper penalty
+    status TEXT CHECK (status IN ('scheduled', 'active', 'completed', 'incomplete', 'expired', 'cancelled')) DEFAULT 'scheduled' NOT NULL
+    -- NEW: 'incomplete', 'expired', and 'cancelled' statuses added
 );
 
 -- 6. Create the Join Requests table for Owner Approvals
