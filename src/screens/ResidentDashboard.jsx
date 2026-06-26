@@ -55,6 +55,8 @@ export function ResidentDashboard() {
       if (error) throw error
 
       let needsRefetch = false
+      let runningScore = parseInt(userProfile.wash_score ?? 100)
+      let needsScoreUpdate = false
 
       for (const booking of data || []) {
         const startTime = new Date(booking.start_time)
@@ -69,13 +71,15 @@ export function ResidentDashboard() {
         if (booking.status === 'scheduled' && now > gracePeriod) {
           await supabase.from('schedule').update({ status: 'expired' }).eq('id', booking.id)
 
-          const currentScore = parseInt(userProfile.wash_score ?? 100)
-          const newScore = Math.max(0, currentScore - 10)
-
-          await supabase.from('profiles').update({ wash_score: newScore }).eq('id', user.id)
-          setUserProfile(prev => ({ ...prev, wash_score: newScore }))
+          runningScore = Math.max(0, runningScore - 10)
+          needsScoreUpdate = true
           needsRefetch = true
         }
+      }
+
+      if (needsScoreUpdate) {
+        await supabase.from('profiles').update({ wash_score: runningScore }).eq('id', user.id)
+        setUserProfile(prev => ({ ...prev, wash_score: runningScore }))
       }
 
       if (needsRefetch) {

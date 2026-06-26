@@ -164,6 +164,7 @@ export function MachineManager({ pgId }) {
     try {
       setSubmitting(true)
 
+      // Step 1: Mark machine as out of order
       const { error: updateError } = await supabase
         .from('machines')
         .update({
@@ -173,6 +174,16 @@ export function MachineManager({ pgId }) {
         .eq('id', maintenanceModal.machineId)
 
       if (updateError) throw updateError
+
+      // Step 2: Instantly cancel all future scheduled washes for this machine
+      const { error: cancelError } = await supabase
+        .from('schedule')
+        .update({ status: 'cancelled' })
+        .eq('machine_id', maintenanceModal.machineId)
+        .eq('status', 'scheduled')
+        .gte('start_time', new Date().toISOString())
+
+      if (cancelError) throw cancelError
 
       setMachines((prev) =>
         prev.map((m) =>
