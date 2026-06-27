@@ -1,12 +1,16 @@
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { createPortal } from 'react-dom'
 
 export function WaitingApproval() {
   const { user, signOut } = useAuth()
   const [pgName, setPgName] = useState('Loading...')
   const [requestedTime, setRequestedTime] = useState(null)
   const [isCanceling, setIsCanceling] = useState(false)
+  
+  // NEW: State to control the custom confirmation modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   // Clean Slate payload used for both auto-eject and manual cancel
   const cleanSlate = {
@@ -44,7 +48,7 @@ export function WaitingApproval() {
           .from('profiles')
           .select('pg_id, is_deleted')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (profileErr) throw profileErr
 
@@ -73,7 +77,8 @@ export function WaitingApproval() {
             .select('created_at')
             .eq('resident_id', user.id)
             .eq('pg_id', profile.pg_id)
-            .single()
+            .limit(1)
+            .maybeSingle()
 
           if (joinReq) setRequestedTime(new Date(joinReq.created_at).toLocaleDateString())
         }
@@ -85,11 +90,14 @@ export function WaitingApproval() {
     fetchPGInfo()
   }, [user])
 
-  // Manual cancel handler
-  const handleRemoveApproval = async () => {
-    const ok = window.confirm('Are you sure you want to cancel your request?')
-    if (!ok) return
+  // NEW: Triggers the modal instead of native confirm
+  const handleRemoveApproval = () => {
+    setShowConfirmModal(true)
+  }
 
+  // NEW: Executes the actual cancellation logic when "Yes" is clicked
+  const confirmCancelRequest = async () => {
+    setShowConfirmModal(false) // Hide modal immediately
     try {
       setIsCanceling(true)
       await performCleanupAndReload()
@@ -147,7 +155,7 @@ export function WaitingApproval() {
               onClick={() => window.location.reload()}
               className="border-4 border-black p-4 bg-cyan-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-cyan-400 w-full active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all"
             >
-              🔄 REFRESH STATUS
+              REFRESH STATUS
             </button>
 
             <button
@@ -155,11 +163,41 @@ export function WaitingApproval() {
               disabled={isCanceling}
               className={`border-4 border-black p-4 bg-orange-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-orange-400 w-full active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all ${isCanceling ? 'opacity-50' : ''}`}
             >
-              {isCanceling ? 'CANCELING...' : '❌ CANCEL JOIN REQUEST'}
+              {isCanceling ? 'CANCELING...' : 'CANCEL JOIN REQUEST'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* NEW: Custom Confirmation Modal */}
+      {showConfirmModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="border-4 border-black p-6 sm:p-8 bg-yellow-200 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h3 className="text-3xl font-black mb-4 uppercase tracking-tight">Hold Up!</h3>
+            <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
+              Are you sure you want to cancel your request? You will need an invite code to apply again.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="w-full border-4 border-black py-4 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg"
+              >
+                NEVERMIND
+              </button>
+              <button
+                onClick={confirmCancelRequest}
+                disabled={isCanceling}
+                className="w-full border-4 border-black py-4 bg-orange-400 font-black hover:bg-orange-500 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-lg disabled:opacity-50"
+              >
+                {isCanceling ? 'CANCELING...' : 'YES, CANCEL REQUEST'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

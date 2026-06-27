@@ -78,7 +78,7 @@ export function QRScannerView({ onScan, onClose, onManualEntry }) {
         </div>
 
         {/* Bottom Actions Area */}
-        <div className="mt-auto mb-8 w-full max-w-[320px] flex flex-col gap-4">
+        <div className="my-8 w-full max-w-[320px] flex flex-col gap-4">
           
           <button
             onClick={onManualEntry}

@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabaseClient'
 import { createPortal } from 'react-dom'
 import { AlertPopup } from './AlertPopup'
 
-
 export function ManageResidents({ pgId, ownerId }) {
   const [residents, setResidents] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -20,51 +19,62 @@ export function ManageResidents({ pgId, ownerId }) {
   }, [pgId, ownerId])
 
   async function fetchData() {
+    setLoading(true);
     try {
-      setLoading(true)
+      // 1. Fetch Pending Requests FIRST
+      const { data: requestData, error: requestError } = await supabase
+        .from('join_requests')
+        .select(`id, resident_id, created_at, profiles (full_name, phone)`)
+        .eq('pg_id', pgId)
+        .eq('status', 'pending');
 
+      if (requestError) throw requestError;
+      
+      const pendingRequests = requestData || [];
+      setRequests(pendingRequests);
+
+      // Extract the IDs of everyone currently waiting for approval
+      const pendingResidentIds = pendingRequests.map(req => req.resident_id);
+
+      // 2. Fetch all profiles linked to this PG
       const { data: residentsData, error: residentsError } = await supabase
         .from('profiles')
         .select('*')
         .eq('pg_id', pgId)
-        .eq('is_deleted', false)
         .eq('role', 'resident')
         .neq('id', ownerId)
-        .order('full_name')
+        .order('full_name');
 
-      if (residentsError) throw residentsError
-      setResidents(residentsData || [])
+      if (residentsError) throw residentsError;
 
-      const { data: requestData, error: requestError } = await supabase
-        .from('join_requests')
-        .select(`
-          id,
-          resident_id,
-          created_at,
-          profiles (
-            full_name,
-            phone
-          )
-        `)
-        .eq('pg_id', pgId)
-        .eq('status', 'pending')
+      // 3. REVERSE FILTER: Hide anyone who has a pending request from the Residents list
+      const actualResidents = (residentsData || []).filter(
+        (resident) => !pendingResidentIds.includes(resident.id)
+      );
 
-      if (requestError) throw requestError
-      setRequests(requestData || [])
+      setResidents(actualResidents);
 
     } catch (error) {
-      console.error('Error fetching data:', error)
-      setAlertMessage("Failed to fetch data")
+      console.error('Error fetching data:', error);
+      setAlertMessage("Failed to fetch data");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  const handleApproveRequest = useCallback(async (requestId, residentId) => {
+  const handleApproveRequest = useCallback(async (residentId) => {
     try {
       setUpdating(true)
-      await supabase.from('join_requests').update({ status: 'approved' }).eq('id', requestId)
-      await supabase.from('profiles').update({ is_approved: true }).eq('id', residentId)
+      // Approve the request
+      await supabase.from('join_requests').update({ status: 'approved' }).eq('resident_id', residentId)
+      // Wipe duplicates just in case
+      await supabase.from('join_requests').delete().eq('resident_id', residentId).eq('status', 'pending')
+      // Update profile
+      await supabase.from('profiles').update({
+        is_approved: true,
+        is_deleted: false
+      }).eq('id', residentId)
+
       await fetchData()
     } catch (error) {
       console.error("Error approving request:", error)
@@ -73,14 +83,13 @@ export function ManageResidents({ pgId, ownerId }) {
     }
   })
 
-  // FIXED: Clean Slate Wipe for Rejected Requests
-  const handleRejectRequest = async (requestId, residentId) => {
+  const handleRejectRequest = async (residentId) => {
     try {
       setUpdating(true)
-      // Delete the request entirely
-      await supabase.from('join_requests').delete().eq('id', requestId)
+      // Completely wipe pending requests
+      await supabase.from('join_requests').delete().eq('resident_id', residentId)
 
-      // Wipe pg_id AND role so they are instantly routed to the Onboarding screen
+      // Eject from PG
       await supabase.from('profiles').update({
         pg_id: null,
         role: null,
@@ -88,6 +97,7 @@ export function ManageResidents({ pgId, ownerId }) {
       }).eq('id', residentId)
 
       await fetchData()
+      setActionModal(null)
     } catch (error) {
       console.error("Error rejecting request:", error)
     } finally {
@@ -122,38 +132,40 @@ export function ManageResidents({ pgId, ownerId }) {
     }
   }
 
-  // FIXED: Clean Slate Wipe for Deleted Residents
   const handleSoftDelete = async (residentId) => {
     try {
-      setUpdating(true)
-
-      // Completely wipe the user from the PG and clear their role
+      setUpdating(true);
+      // Clean slate ejection: Delete any orphaned requests and kick them out of the PG
+      await supabase.from('join_requests').delete().eq('resident_id', residentId);
       await supabase.from('profiles').update({
         pg_id: null,
         role: null,
         is_approved: false,
-        is_deleted: false // Reset so they aren't permanently invisible if they join a new PG
-      }).eq('id', residentId)
-
-      await fetchData()
-      setSelectedResident(null)
-      setActionModal(null)
+        is_deleted: false 
+      }).eq('id', residentId);
+      
+      await fetchData();
+      setActionModal(null);
     } catch (error) {
-      console.error('Error deleting record:', error)
+      console.error('Error deleting record:', error);
     } finally {
-      setUpdating(false)
+      setUpdating(false);
     }
   }
 
+  // ALL MODAL TRIGGERS
   const triggerRemovalModal = (resident) => setActionModal({ type: 'remove', resident })
   const triggerDeletionModal = (resident) => setActionModal({ type: 'delete', resident })
+  const triggerRejectModal = (req) => setActionModal({ type: 'reject_request', req })
 
   const confirmAction = () => {
     if (!actionModal) return
     if (actionModal.type === 'remove') handleDisapprove(actionModal.resident.id)
     else if (actionModal.type === 'delete') handleSoftDelete(actionModal.resident.id)
+    else if (actionModal.type === 'reject_request') handleRejectRequest(actionModal.req.resident_id)
   }
 
+  // Simplified useMemo - no need to check is_deleted anymore since they are kicked out
   const filteredResidents = useMemo(() => {
     return residents.filter((resident) => {
       const query = searchQuery.toLowerCase();
@@ -178,7 +190,7 @@ export function ManageResidents({ pgId, ownerId }) {
 
       <div className="space-y-6 relative">
 
-        {/* 1. PENDING APPROVALS SECTION - COMPACT BAR UI */}
+        {/* 1. PENDING APPROVALS SECTION */}
         <div className="border-4 border-black p-3 sm:p-4 bg-pink-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg sm:text-xl font-black tracking-tight uppercase">Pending Approvals</h2>
@@ -206,7 +218,7 @@ export function ManageResidents({ pgId, ownerId }) {
                   <div className="flex gap-1 shrink-0">
                     <button
                       disabled={updating}
-                      onClick={() => handleRejectRequest(req.id, req.resident_id)}
+                      onClick={() => triggerRejectModal(req)}
                       className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-300 font-black hover:bg-red-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
                       title="Reject"
                     >
@@ -214,7 +226,7 @@ export function ManageResidents({ pgId, ownerId }) {
                     </button>
                     <button
                       disabled={updating}
-                      onClick={() => handleApproveRequest(req.id, req.resident_id)}
+                      onClick={() => handleApproveRequest(req.resident_id)}
                       className="border-2 border-black w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-green-300 font-black hover:bg-green-400 active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50"
                       title="Approve"
                     >
@@ -227,7 +239,7 @@ export function ManageResidents({ pgId, ownerId }) {
           )}
         </div>
 
-        {/* 2. EXISTING RESIDENTS SECTION - COMPACT BAR UI */}
+        {/* 2. EXISTING RESIDENTS SECTION */}
         <div className="border-4 border-black p-3 sm:p-4 bg-blue-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 
           <div className="flex justify-between items-center mb-4">
@@ -393,6 +405,12 @@ export function ManageResidents({ pgId, ownerId }) {
                 </p>
               )}
 
+              {actionModal.type === 'reject_request' && (
+                <p className="font-bold mb-8 text-sm sm:text-base leading-snug">
+                  Are you sure you want to reject this join request?
+                </p>
+              )}
+
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => setActionModal(null)}
@@ -412,7 +430,9 @@ export function ManageResidents({ pgId, ownerId }) {
                     ? 'PROCESSING...'
                     : actionModal.type === 'remove'
                       ? 'YES, REVOKE'
-                      : 'YES, DELETE'}
+                      : actionModal.type === 'delete'
+                        ? 'YES, DELETE'
+                        : 'YES, REJECT'}
                 </button>
               </div>
             </div>

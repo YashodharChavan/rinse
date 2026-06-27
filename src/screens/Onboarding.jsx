@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { QRScannerView } from '../components/QRScannerView'
 export function Onboarding() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [choice, setChoice] = useState(null) // 'join' or 'create'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -85,6 +85,7 @@ export function Onboarding() {
       if (joinError) throw joinError
 
       setSuccess(true)
+      window.location.reload()
     } catch (err) {
       console.error('Error joining PG:', err)
       setError(err.message || 'Failed to join PG. Please try again.')
@@ -200,8 +201,16 @@ export function Onboarding() {
             </button>
           </div>
 
-          <div className="mt-8 text-center text-sm font-bold">
-            <p>Not sure? You can always change your mind later</p>
+          <div className="mt-12 text-center flex flex-col items-center gap-4">
+            <p className="text-sm font-bold">Not sure? You can always change your mind later</p>
+
+            {/* NEW LOGOUT BUTTON */}
+            <button
+              onClick={signOut}
+              className="border-4 border-black px-8 py-3 bg-red-300 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-red-400 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all text-sm uppercase"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>
@@ -273,6 +282,33 @@ export function Onboarding() {
             className="w-full border-4 border-black p-3 bg-white font-black hover:bg-gray-100 active:translate-y-1 active:translate-x-1 active:shadow-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
           >
             ← BACK
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // --- NEW: Pending Approval Screen ---
+  if (choice === 'join' && success) {
+    return (
+      <div className="min-h-screen bg-[#f4f0ea] flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="mb-8 border-4 border-black p-8 bg-yellow-200 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="text-6xl mb-6 animate-pulse">⏳</div>
+            <h2 className="text-3xl font-black tracking-tight mb-4 uppercase">Waiting for Approval</h2>
+            <p className="font-bold text-lg mb-2">
+              Your request has been securely sent to the PG owner.
+            </p>
+            <p className="font-bold text-gray-700 bg-white border-2 border-black p-3 inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-2">
+              Invite Code: {inviteCode}
+            </p>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full border-4 border-black p-5 bg-green-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black text-xl hover:bg-green-400 active:translate-y-1 active:translate-x-1 active:shadow-none transition-all uppercase flex items-center justify-center gap-3"
+          >
+            <span>🔄</span> Refresh Status
           </button>
         </div>
       </div>

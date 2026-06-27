@@ -609,6 +609,9 @@ export function ScheduleView({ user, pgId }) {
                     <div className="border-4 border-black py-2 bg-green-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         <p className="font-black text-[9px] sm:text-[10px] text-center">COMPLETED</p>
                     </div>
+                    <div className="border-4 border-black py-2 bg-yellow-300 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <p className="font-black text-[9px] sm:text-[10px] text-center">ACTIVE</p>
+                    </div>
                     <div className="border-4 border-black py-2 bg-gray-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         <p className="font-black text-[9px] sm:text-[10px] text-center">CANCELLED</p>
                     </div>
