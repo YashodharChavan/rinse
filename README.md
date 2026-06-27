@@ -154,13 +154,29 @@ The core ledger for all wash cycles.
   * `'completed'`: Successfully finished wash (+2 points).
   * `'expired'`: A ghost booking penalty where the user didn't show up (-10 points).
   * `'cancelled'`: Wiped by the system due to machine maintenance (No penalty).
+  
+### 5. `join_requests` (Bookings)
+
+The record keeper of all joining requests.
+
+* `id` (UUID, Primary Key)
+* `pg_id` (UUID, Foreign Key -> `pgs.id`)
+* `resident_id` (UUID, Foreign Key -> `profiles.id`)
+* `created_at` (Timestamp)
+* `status` (Text/Enum) - Tracks the exact state of a join request:
+  * `'pending'`: Request is Pending for approval.
+  * `'approved'`: Request approved by Owner.
+  * `'rejected'`: Request rejected by Owner.
+
 ### 🗺️ Visual Architecture
 
 ```mermaid
 erDiagram
     PGS ||--o{ PROFILES : "houses"
     PGS ||--o{ MACHINES : "contains"
+    PGS ||--o{ JOIN_REQUESTS : "receives"
     PROFILES ||--o{ SCHEDULE : "books"
+    PROFILES ||--o{ JOIN_REQUESTS : "submits"
     MACHINES ||--o{ SCHEDULE : "allocated_to"
 
     PGS {
@@ -195,6 +211,14 @@ erDiagram
         uuid resident_id FK
         timestamp start_time
         timestamp end_time
+        enum status
+    }
+    
+    JOIN_REQUESTS {
+        uuid id PK
+        uuid pg_id FK
+        uuid resident_id FK
+        timestamp created_at
         enum status
     }
 
