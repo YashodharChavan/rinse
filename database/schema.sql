@@ -16,6 +16,7 @@ CREATE TABLE profiles (
     role TEXT CHECK (role IN ('resident', 'owner')) NOT NULL,
     pg_id UUID REFERENCES pgs(id) ON DELETE SET NULL,
     is_approved BOOLEAN DEFAULT FALSE NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE NOT NULL,
     wash_score INTEGER DEFAULT 100 NOT NULL, -- NEW: Gamification trust score
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
