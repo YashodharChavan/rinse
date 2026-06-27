@@ -7,6 +7,12 @@ import { WaitingApproval } from './WaitingApproval'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
 import { AlertPopup } from '../components/AlertPopup'
+import {
+  GRACE_PERIOD_MINUTES,
+  COMPLETION_BONUS_POINTS,
+  START_WASH_BUFFER_MINUTES,
+  MAX_WASH_SCORE,
+} from '../lib/constants'
 
 export function ResidentDashboard() {
   const { user, signOut } = useAuth()
@@ -46,54 +52,27 @@ export function ResidentDashboard() {
       setLoadingBookings(true)
       const now = new Date()
 
+      // Expiration and score deduction are now handled server-side by the
+      // lazy-sweeper edge function. This query only fetches live bookings.
       const { data, error } = await supabase
         .from('schedule')
         .select('*, machines(machine_number)')
         .eq('resident_id', user.id)
+        .in('status', ['scheduled', 'active'])
         .order('start_time', { ascending: true })
 
       if (error) throw error
 
-      let needsRefetch = false
-      let runningScore = parseInt(userProfile.wash_score ?? 100)
-      let needsScoreUpdate = false
+      // Soft-filter: hide bookings the edge function will expire on its next
+      // run so the UI stays accurate between 5-minute cron intervals.
+      const liveBookings = (data || []).filter(b => {
+        const start = new Date(b.start_time)
+        const end = new Date(b.end_time)
+        if (b.status === 'active') return end > now
+        return start.getTime() + GRACE_PERIOD_MINUTES * 60_000 > now.getTime()
+      })
 
-      for (const booking of data || []) {
-        const startTime = new Date(booking.start_time)
-        const endTime = new Date(booking.end_time)
-
-        if (booking.status === 'active' && now > endTime) {
-          await supabase.from('schedule').update({ status: 'completed' }).eq('id', booking.id)
-          needsRefetch = true
-        }
-
-        const gracePeriod = new Date(startTime.getTime() + 15 * 60000)
-        if (booking.status === 'scheduled' && now > gracePeriod) {
-          await supabase.from('schedule').update({ status: 'expired' }).eq('id', booking.id)
-
-          runningScore = Math.max(0, runningScore - 10)
-          needsScoreUpdate = true
-          needsRefetch = true
-        }
-      }
-
-      if (needsScoreUpdate) {
-        await supabase.from('profiles').update({ wash_score: runningScore }).eq('id', user.id)
-        setUserProfile(prev => ({ ...prev, wash_score: runningScore }))
-      }
-
-      if (needsRefetch) {
-        const { data: freshData } = await supabase
-          .from('schedule')
-          .select('*, machines(machine_number)')
-          .eq('resident_id', user.id)
-          .gte('end_time', now.toISOString())
-          .order('start_time', { ascending: true })
-        setUpcomingBookings(freshData || [])
-      } else {
-        setUpcomingBookings(data.filter(b => new Date(b.end_time) > now) || [])
-      }
-
+      setUpcomingBookings(liveBookings)
     } catch (err) {
       console.error('Error fetching your bookings:', err)
     } finally {
@@ -121,8 +100,8 @@ export function ResidentDashboard() {
       if (error) throw error
 
       if (newStatus === 'completed') {
-        const currentScore = parseInt(userProfile.wash_score ?? 100)
-        const newScore = Math.min(100, currentScore + 2)
+        const currentScore = parseInt(userProfile.wash_score ?? MAX_WASH_SCORE)
+        const newScore = Math.min(MAX_WASH_SCORE, currentScore + COMPLETION_BONUS_POINTS)
 
         await supabase.from('profiles').update({ wash_score: newScore }).eq('id', user.id)
         setUserProfile(prev => ({ ...prev, wash_score: newScore }))
@@ -191,8 +170,8 @@ export function ResidentDashboard() {
               <div className="space-y-6 mb-8">
                 {nextBookingsPerMachine.map((booking) => {
                   const startTime = new Date(booking.start_time)
-                  const fiveMinsBefore = new Date(startTime.getTime() - 5 * 60000)
-                  const isTimeToStart = currentTime >= fiveMinsBefore
+                  const bufferBefore = new Date(startTime.getTime() - START_WASH_BUFFER_MINUTES * 60_000)
+                  const isTimeToStart = currentTime >= bufferBefore
 
                   return (
                     <div key={booking.id} className={`border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-colors ${booking.status === 'active' ? 'bg-yellow-300' : 'bg-blue-200'}`}>
