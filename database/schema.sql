@@ -51,5 +51,7 @@ CREATE TABLE join_requests (
     pg_id UUID REFERENCES pgs(id) ON DELETE CASCADE NOT NULL,
     resident_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     status TEXT CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending' NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    CONSTRAINT unique_join_request
+        UNIQUE (pg_id, resident_id)
 );
