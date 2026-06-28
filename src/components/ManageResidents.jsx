@@ -141,7 +141,7 @@ export function ManageResidents({ pgId, ownerId }) {
         pg_id: null,
         role: null,
         is_approved: false,
-        is_deleted: false 
+        is_deleted: true
       }).eq('id', residentId);
       
       await fetchData();
