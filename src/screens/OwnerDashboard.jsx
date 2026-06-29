@@ -646,12 +646,21 @@ export function OwnerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'schedule'
+            className={`border-4 sm:block hidden border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'schedule'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             SCHEDULE
+          </button>
+          <button
+            onClick={() => setActiveTab('schedule')}
+            className={`border-4 sm:hidden block border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'schedule'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            SCHED
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -673,12 +682,21 @@ export function OwnerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'settings'
+            className={`border-4 sm:block hidden border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'settings'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             SETTINGS
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`border-4 sm:hidden block border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'settings'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            SETTIN
           </button>
           <button
             onClick={() => setActiveTab('score')}
