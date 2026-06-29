@@ -6,6 +6,7 @@ import { ProfileView } from '../components/ProfileView'
 import { WaitingApproval } from './WaitingApproval'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
+import { WashHistoryView } from '../components/WashHistoryView'
 import { AlertPopup } from '../components/AlertPopup'
 import {
   GRACE_PERIOD_MINUTES,
@@ -267,6 +268,10 @@ export function ResidentDashboard() {
         <ScheduleView user={user} pgId={userProfile.pg_id} />
       </div>
 
+      <div className={activeTab === 'history' ? 'block' : 'hidden'}>
+        <WashHistoryView userId={user.id} pgId={userProfile.pg_id} />
+      </div>
+
       <div className={activeTab === 'profile' ? 'block' : 'hidden'}>
         <ProfileView
           user={user}
@@ -284,40 +289,48 @@ export function ResidentDashboard() {
 
       {/* Fixed Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 border-t-4 border-black bg-[#f4f0ea] z-50">
-        <div className="max-w-6xl mx-auto px-2 sm:px-4 py-2 grid grid-cols-4 gap-2">
+        <div className="max-w-6xl mx-auto px-1 sm:px-4 py-2 grid grid-cols-5 gap-1 sm:gap-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'home'
-              ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-              : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'home'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             HOME
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'schedule'
-              ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-              : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'schedule'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             SCHEDULE
           </button>
           <button
+            onClick={() => setActiveTab('history')}
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'history'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            HISTORY
+          </button>
+          <button
             onClick={() => setActiveTab('profile')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'profile'
-              ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-              : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'profile'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             PROFILE
           </button>
-
           <button
             onClick={() => setActiveTab('score')}
-            className={`border-4 border-black p-3 sm:p-4 font-black tracking-tight transition-all text-xs sm:text-base ${activeTab === 'score'
-              ? 'bg-yellow-200 shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
-              : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'score'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
           >
             RANK

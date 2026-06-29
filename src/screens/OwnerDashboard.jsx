@@ -6,6 +6,7 @@ import { ManageResidents } from '../components/ManageResidents'
 import { ScheduleView } from '../components/ScheduleView'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { LeaderboardView } from '../components/LeaderboardView'
+import { WashHistoryView } from '../components/WashHistoryView'
 import { AlertPopup } from '../components/AlertPopup'
 import { QRPosterModal } from '../components/QRPosterModal'
 import {
@@ -607,6 +608,10 @@ export function OwnerDashboard() {
           )}
         </div>
 
+        <div className={activeTab === 'history' ? 'block' : 'hidden'}>
+          <WashHistoryView userId={user.id} pgId={userProfile?.pg_id} />
+        </div>
+
         <div className={activeTab === 'residents' ? 'block' : 'hidden'}>
           {pgDetails && (
             <div className="p-2 sm:p-4">
@@ -629,10 +634,10 @@ export function OwnerDashboard() {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 border-t-4 border-black bg-[#f4f0ea] z-50">
-        <div className="max-w-6xl mx-auto px-1 sm:px-4 py-2 grid grid-cols-5 gap-1 sm:gap-2">
+        <div className="max-w-6xl mx-auto px-1 sm:px-4 py-2 grid grid-cols-6 gap-1 sm:gap-2">
           <button
             onClick={() => setActiveTab('home')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'home'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'home'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
@@ -641,7 +646,7 @@ export function OwnerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'schedule'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'schedule'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
@@ -649,8 +654,17 @@ export function OwnerDashboard() {
             SCHEDULE
           </button>
           <button
+            onClick={() => setActiveTab('history')}
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'history'
+              ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
+              : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
+              }`}
+          >
+            HISTORY
+          </button>
+          <button
             onClick={() => setActiveTab('residents')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'residents'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'residents'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
@@ -659,7 +673,7 @@ export function OwnerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'settings'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'settings'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
@@ -668,7 +682,7 @@ export function OwnerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('score')}
-            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[10px] sm:text-base ${activeTab === 'score'
+            className={`border-4 border-black p-2 sm:p-4 font-black tracking-tight transition-all text-[9px] sm:text-base ${activeTab === 'score'
               ? 'bg-yellow-200 shadow-[inset_3px_3px_0px_0px_rgba(0,0,0,0.2)] translate-y-1'
               : 'bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100'
               }`}
